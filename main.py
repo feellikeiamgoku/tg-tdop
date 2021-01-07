@@ -3,24 +3,34 @@ import logging
 from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
-from tg_bot.download_youtube import download_mp3
+from yt_bot.core.pre_processing import get_definition, check_processed
+from yt_bot.validation.definition import YTPlaylist
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
-@run_async
+# @run_async
 def process_link(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Processing your video...")
-    link = update.message.text
-    with download_mp3(link) as downloaded:
-        msg = context.bot.send_audio(chat_id=update.effective_chat.id,
-                               audio=open(downloaded, 'rb'), timeout=1000)
-        if msg:
-            print(msg)
-        else:
-            print("got error while parsing msg")
+    message = update.message.text
+    chat_id = update.effective_chat.id
+    message_id = update.effective_message.id
+    definition = get_definition(message, context.bot, chat_id)
+
+    if isinstance(definition, YTPlaylist):
+        definition = definition.get_links()
+        if not definition:
+            context.bot.send_message(chat_id=chat_id,
+                                     text="Hey, you send me empty playlist, can't get anything from it")
+            return
+    else:
+        definition = (definition,)
+
+    pending = check_processed(bot, chat_id, *definition)
+
+    # print(pending)
 
 
 if __name__ == "__main__":

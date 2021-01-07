@@ -15,13 +15,9 @@ class YTPlaylist(Definition):
         self.link = link
 
     def get_links(self):
-        links = []
         with YoutubeDL() as ydl:
             raw_info = ydl.extract_info(self.link, download=False)
-        for entry in raw_info['entries']:
-            entry_link = YTWatch(entry['webpage_url'])
-            links.append(entry_link)
-        return links
+        return [YTPlaylist(entry['webpage_url']) for entry in raw_info['entries']]
 
 
 class YTWatch(Definition):
