@@ -22,7 +22,7 @@ def check_processed(bot: 'Bot', chat_id: int, *definitions: YTWatch) -> List[YTW
     for definition in definitions:
         result = db.check(definition)
         if result:
-            processed_chat, processed_msg = result
+            processed_chat, processed_msg = result['chat_id'], result['message_id']
             bot.forward_message(chat_id, processed_chat, processed_msg)
         else:
             pending.append(definition)

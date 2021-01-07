@@ -15,7 +15,7 @@ class YTPlaylist(Definition):
         self.link = link
 
     def get_links(self):
-        with YoutubeDL() as ydl:
+        with YoutubeDL({'quiet':True}) as ydl:
             raw_info = ydl.extract_info(self.link, download=False)
         return [YTPlaylist(entry['webpage_url']) for entry in raw_info['entries']]
 

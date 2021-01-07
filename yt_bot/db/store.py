@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import create_engine, MetaData, Table, select
+from sqlalchemy import create_engine, MetaData, Table, select, insert
 
 from yt_bot.validation.definition import YTWatch
 
@@ -31,10 +31,14 @@ class Store:
 
         return result
 
-    def store(self, entity: YTWatch):
-        pass
+    def save(self, link, chat_id, message_id):
+        table = Table(self._table_name, self._metadata, autoload=True, autoload_with=self._engine)
+
+        query = insert(table).values(link=link, chat_id=chat_id, message_id=message_id)
+
+        self.con.execute(query)
 
 
 if __name__ == "__main__":
     store = Store()
-    res = store.check('https://www.youtube.com/watch?v=J43eZqsTBEc&list=PL7T6cfreEgTCW8nIEOjg1XsgQ5zf086u4&index=1')
+    store.save("link", 123, 123)
