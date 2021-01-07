@@ -1,22 +1,23 @@
 from typing import List
 
-from yt_bot.validation.definition import DefineYTLinkType, YTWatch, YTPlaylist, Definition
-from yt_bot.validation.exceptions import DefinitionError, ValidationError
+from yt_bot.validation.definition import DefineYTLinkType, Audio
 from yt_bot.db.store import Store
 
+from youtube_dl import DownloadError
 
-def get_definition(message: str, bot: 'Bot', chat_id: int) -> Definition:
+
+def get_definition(message: str, bot: 'Bot', chat_id: int) -> List[Audio]:
     try:
         definer = DefineYTLinkType(message)
         to_process = definer.define()
-    except (ValidationError, DefinitionError) as e:
-        bot.send_message(chat_id=chat_id, text=e.message)
+    except DownloadError as e:
+        bot.send_message(chat_id=chat_id, text='Face some error, please, check provided link.')
     else:
         bot.send_message(chat_id=chat_id, text="Processing your video...")
         return to_process
 
 
-def check_processed(bot: 'Bot', chat_id: int, *definitions: YTWatch) -> List[YTWatch]:
+def check_processed(bot: 'Bot', chat_id: int, *definitions: Audio) -> List[Audio]:
     db = Store()
     pending = []
     for definition in definitions:

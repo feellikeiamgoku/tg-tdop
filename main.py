@@ -6,7 +6,6 @@ from telegram.bot import Bot
 from yt_bot.core.pre_processing import get_definition, check_processed
 from yt_bot.core.processing import process
 from yt_bot.core.post_processing import save_processed
-from yt_bot.validation.definition import YTPlaylist
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -21,18 +20,11 @@ def process_link(update, context):
     message_id = update.effective_message.message_id
     definition = get_definition(message, context.bot, chat_id)
 
-    if isinstance(definition, YTPlaylist):
-        definition = definition.get_links()
-        if not definition:
-            context.bot.send_message(chat_id=chat_id,
-                                     text="Hey, you send me empty playlist, can't get anything from it")
-            return
-    else:
-        definition = (definition,)
 
     pending = check_processed(bot, chat_id, *definition)
     to_save = process(chat_id, message_id, bot, *pending)
     save_processed(to_save)
+
 
 if __name__ == "__main__":
     bot = Bot(BOT_TOKEN)

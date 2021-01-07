@@ -2,10 +2,6 @@ import os
 import pathlib
 import shutil
 
-from threading import Lock
-
-DirLock = Lock()
-
 
 class DirContext:
 
