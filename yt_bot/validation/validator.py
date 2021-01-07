@@ -1,6 +1,5 @@
 import re
 from abc import abstractmethod, ABC
-from yt_bot.validation.exceptions import ValidationError, DefinitionError
 
 
 class LinkValidator(ABC):

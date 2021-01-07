@@ -1,4 +1,3 @@
-import re
 from abc import abstractmethod, ABC
 
 from yt_bot.validation.validator import YTLinkValidator
