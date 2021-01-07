@@ -40,6 +40,11 @@ class TestValidator:
         result = validator.valid()
         assert result is False
 
+        multiple_type_input = 'https://www.youtube.com/playlist?list=PL2E9929257D9B20B7&https://www.youtube.com/watch?v=xyz'
+        validator = YTLinkValidator(multiple_type_input)
+        result = validator.valid()
+        assert result is False
+
     @mock.patch('yt_bot.validation.validator.YTLinkValidator._valid', return_value=True)
     def test_from_not_yt_domain(self, valid_mock):
         link = 'http://not-exist.xyz'

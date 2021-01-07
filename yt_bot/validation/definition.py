@@ -1,5 +1,7 @@
 from abc import abstractmethod, ABC
 
+from youtube_dl import YoutubeDL
+
 from yt_bot.validation.validator import YTLinkValidator
 from yt_bot.validation.exceptions import ValidationError, DefinitionError
 
@@ -11,6 +13,15 @@ class Definition(ABC):
 class YTPlaylist(Definition):
     def __init__(self, link: str):
         self.link = link
+
+    def get_links(self):
+        links = []
+        with YoutubeDL() as ydl:
+            raw_info = ydl.extract_info(self.link, download=False)
+        for entry in raw_info['entries']:
+            entry_link = YTWatch(entry['webpage_url'])
+            links.append(entry_link)
+        return links
 
 
 class YTWatch(Definition):

@@ -12,7 +12,7 @@ class LinkValidator(ABC):
 class YTLinkValidator(LinkValidator):
     base_url = 'https://www.youtube.com/'
     retrieval_pattern = re.compile(
-        r"(^https://www\.youtube\.com/watch\?v=[a-zA-Z0-9]+$)|(^https://www\.youtube\.com/playlist\?list=.+$)"
+        r"(^https://www\.youtube\.com/watch\?v=[^&?]+$)|(^https://www\.youtube\.com/playlist\?list=[^&?]+$)"
     )
 
     def __init__(self, message: str):
