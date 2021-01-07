@@ -4,7 +4,6 @@ from typing import List
 
 from youtube_dl import YoutubeDL
 
-from yt_bot.validation.exceptions import ValidationError, DefinitionError
 
 ydl_opts = {
     'format': 'bestaudio/best',
@@ -38,6 +37,7 @@ class Audio:
     def get_path(self):
         return os.path.join(os.getcwd(), self.filename)
 
+
 class DefineLinkType(ABC):
 
     @abstractmethod
@@ -54,16 +54,16 @@ class DefineYTLinkType(DefineLinkType):
     def define(self) -> List[Audio]:
         with self.ydl as ydl:
             info = ydl.extract_info(self.message, download=False)
-            if isinstance(info, dict):
+            if info.get('entries'):
+                entries = []
+                for entry in info['entries']:
+                    filename = ydl.prepare_filename(entry)
+                    audio = Audio(entry['id'], filename, entry['webpage_url'], entry['creator'], entry['title'],
+                                  entry['filesize'])
+                    entries.append(audio)
+                return entries
+            else:
                 filename = ydl.prepare_filename(info)
                 audio = Audio(info['id'], filename, info['webpage_url'], info['creator'], info['title'],
                               info['filesize'])
                 return [audio]
-            elif isinstance(info, list):
-                entries = []
-                for entry in info['entries']:
-                    filename = ydl.prepare_filename(entry)
-                    audio = Audio(entry['id'], filename, info['webpage_url'], entry['creator'], entry['title'],
-                                  entry['filesize'])
-                    entries.append(audio)
-                return entries
