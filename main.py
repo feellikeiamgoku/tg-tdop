@@ -1,12 +1,12 @@
 import os
 import logging
-from telegram.ext import Updater, Filters, MessageHandler, run_async
+from telegram.ext import Updater, Filters, MessageHandler
 from telegram.bot import Bot
 
 from yt_bot.core.pre_processing import get_definition, check_processed
 from yt_bot.core.processing import process
 from yt_bot.core.post_processing import save_processed
-
+from yt_bot.db.initialize import Initializer
 from utils import emoji
 
 
@@ -37,6 +37,7 @@ def setup():
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     token = os.getenv("BOT_TOKEN")
+    Initializer.run()
 
     bot = Bot(token)
     updater = Updater(bot=bot)
