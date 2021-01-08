@@ -1,6 +1,6 @@
 import os
 import logging
-from telegram.ext import Updater, Filters, MessageHandler
+from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
 from yt_bot.core.pre_processing import get_definition, check_processed
@@ -10,7 +10,7 @@ from yt_bot.db.initialize import Initializer
 from utils import emoji
 
 
-# @run_async
+@run_async
 def process_link(update, context):
     message = update.message.text
     chat_id = update.effective_chat.id
