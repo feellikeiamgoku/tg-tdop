@@ -6,7 +6,7 @@ def _process(chat_id, message_id, bot, audio):
     with DirContext(chat_id, message_id):
         download(audio.link)
 
-        msg = bot.send_audio(chat_id, open(audio.get_path(), 'rb'), performer=audio.author, title=audio.title)
+        msg = bot.send_audio(chat_id, open(audio.get_path(), 'rb'), performer=audio.author, title=audio.title, timeout=1000)
 
         audio.set_postprocess_values(chat_id, msg.message_id)
         return audio

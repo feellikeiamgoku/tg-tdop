@@ -1,11 +1,4 @@
-
-class DefinitionError(Exception):
+class EmptyPlayListError(Exception):
     def __init__(self):
-        self.message = "Youtube link doesn't match playlist type or video type."
-        super().__init__(self.message)
-
-
-class ValidationError(Exception):
-    def __init__(self):
-        self.message = "Invalid link, please send link from youtube.com"
-        super().__init__(self.message)
+        self.msg = 'Empty playlist, please, check out your playlist.'
+        super().__init__(self.msg)

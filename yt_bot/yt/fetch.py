@@ -9,7 +9,7 @@ ydl_opts = {
         'preferredcodec': 'mp3',
         'preferredquality': '192',
     }],
-    'quiet': True
+    'quiet': False
 }
 
 
@@ -19,4 +19,4 @@ def download(url):
 
 
 if __name__ == "__main__":
-    pass
+    download('https://www.youtube.com/watch?v=dCETckUx97o')

@@ -13,17 +13,16 @@ logging.basicConfig(level=logging.ERROR,
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
-@run_async
+# @run_async
 def process_link(update, context):
     message = update.message.text
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
     definition = get_definition(message, context.bot, chat_id)
-
-
-    pending = check_processed(bot, chat_id, *definition)
-    to_save = process(chat_id, message_id, bot, *pending)
-    save_processed(to_save)
+    if definition:
+        pending = check_processed(bot, chat_id, *definition)
+        to_save = process(chat_id, message_id, bot, *pending)
+        save_processed(to_save)
 
 
 if __name__ == "__main__":

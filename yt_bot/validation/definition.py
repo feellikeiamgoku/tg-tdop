@@ -3,19 +3,8 @@ from abc import abstractmethod, ABC
 from typing import List
 
 from youtube_dl import YoutubeDL
-
-
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(title)s.mp3',
-    'noplaylist': True,
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-    'quiet': True
-}
+from yt_bot.constants import YDL_OPTS
+from yt_bot.validation.exceptions import EmptyPlayListError
 
 
 class Audio:
@@ -49,21 +38,23 @@ class DefineYTLinkType(DefineLinkType):
 
     def __init__(self, message: str):
         self.message = message
-        self.ydl = YoutubeDL(ydl_opts)
+        self.ydl = YoutubeDL(YDL_OPTS)
 
     def define(self) -> List[Audio]:
+
+        info = self.get_video_info()
+        entries = []
+        for entry in info:
+            filename = self.ydl.prepare_filename(entry)
+            audio = Audio(entry.get('id'), filename, entry.get('webpage_url'), entry.get('creator'), entry.get('title'),
+                          entry.get('filesize'))
+            entries.append(audio)
+        return entries
+
+    def get_video_info(self) -> List[dict]:
         with self.ydl as ydl:
             info = ydl.extract_info(self.message, download=False)
-            if info.get('entries'):
-                entries = []
-                for entry in info['entries']:
-                    filename = ydl.prepare_filename(entry)
-                    audio = Audio(entry['id'], filename, entry['webpage_url'], entry['creator'], entry['title'],
-                                  entry['filesize'])
-                    entries.append(audio)
-                return entries
-            else:
-                filename = ydl.prepare_filename(info)
-                audio = Audio(info['id'], filename, info['webpage_url'], info['creator'], info['title'],
-                              info['filesize'])
-                return [audio]
+        entries = info.get('entries')
+        if isinstance(entries, list) and not entries:
+            raise EmptyPlayListError()
+        return info.get('entries') or [info]
