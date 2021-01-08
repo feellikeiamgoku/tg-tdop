@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Union
 
 from youtube_dl import DownloadError
 from telegram.bot import Bot
@@ -8,20 +8,18 @@ from yt_bot.validation.definition import DefineYTLinkType, Audio, EmptyPlayListE
 from yt_bot.db.store import Store
 
 
-def get_definition(message: str, bot: Bot, chat_id: int) -> List[Audio]:
-    bot.send_message(chat_id=chat_id, text=f'Doing magic, wait a sec... {emoji.rainbow}')
+def get_definition(message: str) -> Tuple[Union[List[Audio], None], str]:
+    """Returns definition and message for further sending"""
 
     try:
         definer = DefineYTLinkType(message)
         to_process = definer.define()
     except DownloadError:
-        bot.send_message(chat_id=chat_id,
-                         text=f'Invalid link, please, take a look at provided link {emoji.exclamation_mark}')
+        return None, f'Invalid link, please, take a look at provided link {emoji.exclamation_mark}'
     except EmptyPlayListError as e:
-        bot.send_message(chat_id=chat_id, text=f'{e.msg} {emoji.exclamation_question_mark_selector}')
+        return None, f'{e.msg} {emoji.exclamation_question_mark_selector}'
     else:
-        bot.send_message(chat_id=chat_id, text=f'Processing your video... {emoji.robot}')
-        return to_process
+        return to_process, f'Processing your video... {emoji.robot}'
 
 
 def check_processed(bot: 'Bot', chat_id: int, *definitions: Audio) -> List[Audio]:

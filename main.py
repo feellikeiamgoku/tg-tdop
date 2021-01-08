@@ -7,6 +7,8 @@ from yt_bot.core.pre_processing import get_definition, check_processed
 from yt_bot.core.processing import process
 from yt_bot.core.post_processing import save_processed
 
+from utils import emoji
+
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -18,7 +20,11 @@ def process_link(update, context):
     message = update.message.text
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
-    definition = get_definition(message, context.bot, chat_id)
+
+    context.bot.send_message(chat_id, f'Doing magic, wait a sec... {emoji.rainbow}')
+
+    definition, msg = get_definition(message)
+    context.bot.send_message(chat_id, msg)
     if definition:
         pending = check_processed(bot, chat_id, *definition)
         to_save = process(chat_id, message_id, bot, *pending)
