@@ -1,21 +1,26 @@
 from typing import List
 
+from youtube_dl import DownloadError
+from telegram.bot import Bot
+
+from utils import emoji
 from yt_bot.validation.definition import DefineYTLinkType, Audio, EmptyPlayListError
 from yt_bot.db.store import Store
 
-from youtube_dl import DownloadError
 
+def get_definition(message: str, bot: Bot, chat_id: int) -> List[Audio]:
+    bot.send_message(chat_id=chat_id, text=f'Doing magic, wait a sec... {emoji.rainbow}')
 
-def get_definition(message: str, bot: 'Bot', chat_id: int) -> List[Audio]:
     try:
         definer = DefineYTLinkType(message)
         to_process = definer.define()
     except DownloadError:
-        bot.send_message(chat_id=chat_id, text='Invalid link, please, take a look at provided link.')
+        bot.send_message(chat_id=chat_id,
+                         text=f'Invalid link, please, take a look at provided link {emoji.exclamation_mark}')
     except EmptyPlayListError as e:
-        bot.send_message(chat_id=chat_id, text=e.msg)
+        bot.send_message(chat_id=chat_id, text=f'{e.msg} {emoji.exclamation_question_mark_selector}')
     else:
-        bot.send_message(chat_id=chat_id, text="Processing your video...")
+        bot.send_message(chat_id=chat_id, text=f'Processing your video... {emoji.robot}')
         return to_process
 
 

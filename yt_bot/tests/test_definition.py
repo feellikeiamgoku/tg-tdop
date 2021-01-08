@@ -2,12 +2,10 @@ import pytest
 from unittest.mock import patch
 
 from yt_bot.validation.definition import DefineYTLinkType, EmptyPlayListError
+from yt_bot.core.pre_processing import get_definition
 
 
 class TestDefinition:
-
-    def test_define(self):
-        pass
 
     @patch('yt_bot.validation.definition.YoutubeDL.extract_info')
     def test_get_video_info(self, mock):
@@ -37,6 +35,14 @@ class TestDefinition:
         assert len(result) == 1
 
         mock.reset_mock()
-        mock.return_value = {'entries':[{'id':1}, {'id':2}]}
+        mock.return_value = {'entries': [{'id': 1}, {'id': 2}]}
         result = definer.define()
         assert len(result) == 2
+
+    @patch('yt_bot.core.pre_processing.Bot')
+    @patch('yt_bot.core.pre_processing.DefineYTLinkType.define')
+    def test_get_definition(self, mock_define, mock_bot):
+        get_definition('message', mock_bot, 123)
+
+
+pytest.main()
