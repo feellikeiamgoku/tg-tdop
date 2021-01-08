@@ -13,12 +13,7 @@ class Store:
         self._table_name = 'processed'
 
     def get_engine(self):
-        host = os.getenv('HOST')
-        port = os.getenv('PORT')
-        db = os.getenv('DB')
-        user = os.getenv('USER')
-        password = os.getenv('PASSWORD')
-        con_str = f'postgresql://{user}:{password}@{host}:{port}/{db}'
+        con_str = os.getenv('DATABASE_URL')
         engine = create_engine(con_str)
         return engine
 
