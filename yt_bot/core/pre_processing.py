@@ -1,14 +1,13 @@
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 from youtube_dl import DownloadError
-from telegram.bot import Bot
 
 from utils import emoji
-from yt_bot.validation.definition import DefineYTLinkType, Audio, EmptyPlayListError
+from yt_bot.validation.definition import DefineYTLinkType, AudioList, EmptyPlayListError
 from yt_bot.db.store import Store
 
 
-def get_definition(message: str) -> Tuple[Union[List[Audio], None], str]:
+def get_definition(message: str) -> Tuple[Union[AudioList, None], str]:
     """Returns definition and message for further sending"""
 
     try:
@@ -22,14 +21,10 @@ def get_definition(message: str) -> Tuple[Union[List[Audio], None], str]:
         return to_process, f'Processing your video... {emoji.robot}'
 
 
-def check_processed(bot: 'Bot', chat_id: int, *definitions: Audio) -> List[Audio]:
+def check_processed(al: AudioList):
     db = Store()
-    pending = []
-    for definition in definitions:
-        result = db.check(definition)
+    for audio in al:
+        result = db.check(audio)
         if result:
-            processed_chat, processed_msg = result['chat_id'], result['message_id']
-            bot.forward_message(chat_id, processed_chat, processed_msg)
-        else:
-            pending.append(definition)
-    return pending
+            audio.mark_processed()
+            yield result['chat_id'], result['message_id']

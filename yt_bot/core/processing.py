@@ -1,17 +1,14 @@
+import os
+
 from yt_bot.yt.fetch import download
 from yt_bot.yt.context import DirContext
+from yt_bot.validation.definition import AudioList
 
 
-def _process(chat_id, message_id, bot, audio):
+def process(chat_id: int, message_id: int, al: AudioList):
     with DirContext(chat_id, message_id):
-        download(audio.link)
-
-        msg = bot.send_audio(chat_id, open(audio.get_path(), 'rb'), performer=audio.author, title=audio.title, timeout=1000)
-
-        audio.set_postprocess_values(chat_id, msg.message_id)
-        return audio
-
-
-def process(chat_id, message_id, bot, *descriptions):
-    msgs = [_process(chat_id, message_id, bot, audio) for audio in descriptions]
-    return msgs
+        base = os.getcwd()
+        for audio in al.unprocessed:
+            download(audio.link)
+            audio.set_path(base)
+            yield audio

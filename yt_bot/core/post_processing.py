@@ -1,7 +1,6 @@
 from yt_bot.db.store import Store
 
 
-def save_processed(msgs):
+def save_processed(audio):
     db = Store()
-    for audio in msgs:
-        db.save(audio)
+    db.save(audio)

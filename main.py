@@ -9,11 +9,6 @@ from yt_bot.core.post_processing import save_processed
 
 from utils import emoji
 
-logging.basicConfig(level=logging.ERROR,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 
 # @run_async
 def process_link(update, context):
@@ -23,18 +18,33 @@ def process_link(update, context):
 
     context.bot.send_message(chat_id, f'Doing magic, wait a sec... {emoji.rainbow}')
 
-    definition, msg = get_definition(message)
+    to_process, msg = get_definition(message)
     context.bot.send_message(chat_id, msg)
-    if definition:
-        pending = check_processed(bot, chat_id, *definition)
-        to_save = process(chat_id, message_id, bot, *pending)
-        save_processed(to_save)
+
+    if to_process:
+        for processed_chat, processed_msg in check_processed(to_process):
+            context.bot.forward_message(chat_id, processed_chat, processed_msg)
+
+        for audio in process(chat_id, message_id, to_process):
+            msg = context.bot.send_audio(chat_id, open(audio.path, 'rb'), performer=audio.author,
+                                         title=audio.title, timeout=1000)
+            audio.set_postprocess_values(chat_id, msg.message_id)
+            save_processed(audio)
 
 
-if __name__ == "__main__":
-    bot = Bot(BOT_TOKEN)
+def setup():
+    logging.basicConfig(level=logging.ERROR,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    token = os.getenv("BOT_TOKEN")
+
+    bot = Bot(token)
     updater = Updater(bot=bot)
     dispatcher = updater.dispatcher
     link_handler = MessageHandler(Filters.text & (~Filters.command), process_link)
     dispatcher.add_handler(link_handler)
     updater.start_polling()
+
+
+if __name__ == "__main__":
+    setup()

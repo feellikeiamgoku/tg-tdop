@@ -16,15 +16,46 @@ class Audio:
         self.author = author
         self.title = title
         self.filesize = filesize
+
         self.message_id = None
         self.chat_id = None
+        self.path = None
+        self.processed = False
 
     def set_postprocess_values(self, chat_id, message_id):
         self.chat_id = chat_id
         self.message_id = message_id
 
-    def get_path(self):
-        return os.path.join(os.getcwd(), self.filename)
+    def set_path(self, basedir: str) -> None:
+        self.path = os.path.join(basedir, self.filename)
+
+    def mark_processed(self) -> None:
+        self.processed = True
+
+
+class AudioList:
+    def __init__(self):
+        self.audios: List[Audio] = []
+
+    def add(self, audio: Audio):
+        if isinstance(audio, Audio):
+            self.audios.append(audio)
+        else:
+            raise TypeError(f'Got inappropriate type "{type(audio)}"')
+
+    @property
+    def unprocessed(self):
+        return [audio for audio in self.audios if audio.processed is False]
+
+    @property
+    def fully_processed(self):
+        return all([audio.processed for audio in self.audios])
+
+    def __iter__(self):
+        return iter(self.audios)
+
+    def __len__(self):
+        return len(self.unprocessed)
 
 
 class DefineLinkType(ABC):
@@ -40,16 +71,16 @@ class DefineYTLinkType(DefineLinkType):
         self.message = message
         self.ydl = YoutubeDL(YDL_OPTS)
 
-    def define(self) -> List[Audio]:
+    def define(self) -> AudioList:
 
         info = self.get_video_info()
-        entries = []
+        al = AudioList()
         for entry in info:
             filename = self.ydl.prepare_filename(entry)
             audio = Audio(entry.get('id'), filename, entry.get('webpage_url'), entry.get('creator'), entry.get('title'),
                           entry.get('filesize'))
-            entries.append(audio)
-        return entries
+            al.add(audio)
+        return al
 
     def get_video_info(self) -> List[dict]:
         with self.ydl as ydl:

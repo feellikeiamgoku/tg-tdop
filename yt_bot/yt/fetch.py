@@ -1,20 +1,9 @@
 from youtube_dl import YoutubeDL
-
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(title)s.mp3',
-    'noplaylist': True,
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-    'quiet': False
-}
+from yt_bot.constants import YDL_OPTS
 
 
 def download(url):
-    with YoutubeDL(ydl_opts) as ydl:
+    with YoutubeDL(YDL_OPTS) as ydl:
         ydl.download([url])
 
 
