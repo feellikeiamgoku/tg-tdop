@@ -6,17 +6,16 @@ from utils import emoji
 from yt_bot.validation.definition import DefineYTLinkType, AudioList, EmptyPlayListError
 from yt_bot.db.store import Store
 
+from yt_bot.validation.definition import VideoValidator, ValidationError, ValidationResult
 
-def get_definition(message: str) -> Tuple[Union[AudioList, None], str]:
+
+def get_definition(message: str) -> Tuple[Union[None,ValidationResult], str]:
     """Returns definition and message for further sending"""
-
     try:
-        definer = DefineYTLinkType(message)
-        to_process = definer.define()
-    except DownloadError:
+        validator = VideoValidator(message)
+        to_process = validator.validate()
+    except ValidationError:
         return None, f'Invalid link, please, take a look at provided link {emoji.exclamation_mark}'
-    except EmptyPlayListError as e:
-        return None, f'{e.msg} {emoji.exclamation_question_mark_selector}'
     else:
         return to_process, f'Processing your video... {emoji.robot}'
 

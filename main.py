@@ -16,8 +16,6 @@ def process_link(update, context):
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
 
-    context.bot.send_message(chat_id, f'Doing magic, wait a sec... {emoji.rainbow}')
-
     to_process, msg = get_definition(message)
     context.bot.send_message(chat_id, msg)
 

@@ -1,6 +1,7 @@
+import re
 import os
 from abc import abstractmethod, ABC
-from typing import List
+from typing import List, Tuple
 
 from youtube_dl import YoutubeDL
 from yt_bot.constants import YDL_OPTS
@@ -89,3 +90,31 @@ class DefineYTLinkType(DefineLinkType):
         if isinstance(entries, list) and not entries:
             raise EmptyPlayListError()
         return info.get('entries') or [info]
+
+
+class ValidationError(Exception):
+    pass
+
+
+class ValidationResult:
+    def __init__(self, link: str, video_id: str):
+        self.link = link
+        self.video_id = video_id
+
+
+class VideoValidator:
+    validation_pattern = re.compile(
+        r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})'
+    )
+
+    def __init__(self, message: str):
+        self.message = message
+
+    def validate(self) -> ValidationResult:
+        link = re.search(self.validation_pattern, self.message)
+        if link:
+            full_link = link.group(0)
+            video_id = link.group(1)
+            return ValidationResult(full_link, video_id)
+        else:
+            raise ValidationError("Invalid youtube link.")
