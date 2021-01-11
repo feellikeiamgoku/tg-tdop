@@ -2,7 +2,10 @@ import pytest
 from unittest.mock import patch
 
 from yt_bot.validation.definition import DefineYTLinkType, ValidationError, EmptyPlayListError
-from yt_bot.core.pre_processing import get_definition, DownloadError
+from yt_bot.core.pre_processing import get_further_processing
+
+from youtube_dl import DownloadError
+
 
 class TestDefinition:
 
@@ -40,13 +43,14 @@ class TestDefinition:
 
     @patch('yt_bot.core.pre_processing.VideoValidator.validate')
     def test_get_definition(self, mock_define):
-        definition, msg = get_definition('message')
+        definition, msg = get_further_processing('message')
         assert definition is not None
         assert mock_define.called is True
 
         mock_define.side_effect = ValidationError("error")
-        definition, msg = get_definition('message')
+        definition, msg = get_further_processing('message')
         assert definition is None
         assert mock_define.called is True
+
 
 pytest.main()

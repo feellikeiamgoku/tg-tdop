@@ -14,6 +14,7 @@ class DirContext:
         path = self.get_message_path()
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         os.chdir(path)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         path = self.get_message_path()

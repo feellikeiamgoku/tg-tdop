@@ -22,20 +22,20 @@ class Store:
         engine = db.create_engine(con_str)
         return engine
 
-    def check(self, entity: Audio):
+    def check(self, video_id:str):
         table = db.Table(self._table_name, self._metadata, autoload=True, autoload_with=self._engine)
 
-        query = db.select([table]).where(table.c.video_id == entity.video_id)
+        query = db.select([table]).where(table.c.video_id == video_id)
 
         result = self.con.execute(query).fetchone()
 
         return result
 
-    def save(self, audio: Audio):
+    def save(self, chat_id, message_id, video_id, link):
         table = db.Table(self._table_name, self._metadata, autoload=True, autoload_with=self._engine)
 
-        query = db.insert(table).values(video_id=audio.video_id, chat_id=audio.chat_id, message_id=audio.message_id,
-                                        link=audio.link)
+        query = db.insert(table).values(video_id=video_id, chat_id=chat_id, message_id=message_id,
+                                        link=link)
 
         self.con.execute(query)
 

@@ -1,6 +1,6 @@
 from yt_bot.db.store import Store
 
 
-def save_processed(audio):
+def save_processed(chat_id, message_id, video_id, link):
     db = Store()
-    db.save(audio)
+    db.save(chat_id, message_id, video_id, link)

@@ -3,11 +3,12 @@ import logging
 from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
-from yt_bot.core.pre_processing import get_definition, check_processed
+from yt_bot.core.pre_processing import get_further_processing, check_processed
 from yt_bot.core.processing import process
 from yt_bot.core.post_processing import save_processed
 from yt_bot.db.initialize import Initializer
-from utils import emoji
+from yt_bot.yt.context import DirContext
+from youtube_dl import DownloadError
 
 
 @run_async
@@ -16,18 +17,23 @@ def process_link(update, context):
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
 
-    to_process, msg = get_definition(message)
+    future, msg = get_further_processing(message)
     context.bot.send_message(chat_id, msg)
 
-    if to_process:
-        for processed_chat, processed_msg in check_processed(to_process):
+    if future:
+        processed = check_processed(future.video_id)
+        if processed:
+            processed_chat, processed_msg = processed[0], processed[1]
             context.bot.forward_message(chat_id, processed_chat, processed_msg)
-
-        for audio in process(chat_id, message_id, to_process):
-            msg = context.bot.send_audio(chat_id, open(audio.path, 'rb'), performer=audio.author,
-                                         title=audio.title, timeout=1000)
-            audio.set_postprocess_values(chat_id, msg.message_id)
-            save_processed(audio)
+        else:
+            try:
+                with DirContext(chat_id, message_id):
+                    path = process(future.link)
+                    msg = context.bot.send_audio(chat_id, open(path, 'rb'), timeout=1000)
+            except DownloadError:
+                context.bot.send_message(chat_id, "Error with link")
+            else:
+                save_processed(chat_id, msg.message_id, future.video_id, future.link)
 
 
 def setup():
