@@ -3,12 +3,8 @@ import logging
 from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
-from yt_bot.core.pre_processing import get_further_processing, check_processed
-from yt_bot.core.processing import process
-from yt_bot.core.post_processing import save_processed
+from yt_bot.core.processing import DownloadProcessor, UserInputError
 from yt_bot.db.initialize import Initializer
-from yt_bot.yt.context import DirContext
-from youtube_dl import DownloadError
 
 
 @run_async
@@ -16,24 +12,13 @@ def process_link(update, context):
     message = update.message.text
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
+    bot = context.bot
+    processor = DownloadProcessor(chat_id, message_id, message, bot)
 
-    future, msg = get_further_processing(message)
-    context.bot.send_message(chat_id, msg)
-
-    if future:
-        processed = check_processed(future.video_id)
-        if processed:
-            processed_chat, processed_msg = processed[0], processed[1]
-            context.bot.forward_message(chat_id, processed_chat, processed_msg)
-        else:
-            try:
-                with DirContext(chat_id, message_id):
-                    path = process(future.link)
-                    msg = context.bot.send_audio(chat_id, open(path, 'rb'), timeout=1000)
-            except DownloadError:
-                context.bot.send_message(chat_id, "Error with link")
-            else:
-                save_processed(chat_id, msg.message_id, future.video_id, future.link)
+    try:
+        processor.run()
+    except UserInputError as e:
+        processor.notify(e.msg)
 
 
 def setup():

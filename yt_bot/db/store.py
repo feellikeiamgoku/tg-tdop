@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
-from typing import List
+from typing import List, NamedTuple
 
 from yt_bot.db.tables import ProcessedTable
 
@@ -26,6 +26,11 @@ def get_session(*args, **kwargs):
             session.close()
 
     return inner
+
+
+class ForwardResult(NamedTuple):
+    chat_id: str
+    message_id: str
 
 
 class Store:
@@ -51,10 +56,14 @@ class Store:
         engine = db.create_engine(con_str)
         return engine
 
-    def check(self, video_id: str) -> List[ProcessedTable]:
+    def check(self, video_id: str) -> List[ForwardResult]:
         with self._session_context() as s:
-            result = s.query(ProcessedTable).filter_by(video_id=video_id).all()
-            return result if result else None
+            results = s.query(ProcessedTable).filter_by(video_id=video_id).all()
+            if results:
+                forward_results = [ForwardResult(result.chat_id, result.message_id) for result in results]
+                return forward_results
+            else:
+                return None
 
     def save(self, chat_id, message_id, video_id, link, part):
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
@@ -63,4 +72,5 @@ class Store:
 
 
 if __name__ == "__main__":
-    pass
+    db = Store()
+    db.check('dexiQGxBNFw')

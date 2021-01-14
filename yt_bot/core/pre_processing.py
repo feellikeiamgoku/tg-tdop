@@ -3,7 +3,7 @@ from typing import Tuple, Union
 from utils import emoji
 from yt_bot.db.store import Store
 
-from yt_bot.validation.definition import VideoValidator, ValidationError, ValidationResult
+from yt_bot.validation.validators import VideoValidator, ValidationError, ValidationResult
 
 
 def get_further_processing(message: str) -> Tuple[Union[ValidationResult, None], str]:

@@ -1,6 +1,7 @@
 import pytest
 
-from yt_bot.validation.definition import ValidationResult, ValidationError, VideoValidator
+from yt_bot.validation.validators import ValidationResult, VideoValidator
+from yt_bot.validation.exceptions import ValidationError
 
 
 class TestValidation:
