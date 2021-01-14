@@ -1,15 +1,44 @@
 import os
+import logging
+from contextlib import contextmanager
 
 import sqlalchemy as db
-from yt_bot.validation.definition import Audio
+from sqlalchemy.orm import sessionmaker
+from typing import List
+
+from yt_bot.db.tables import ProcessedTable
+
+
+def get_session(*args, **kwargs):
+    session_cls = sessionmaker(*args, **kwargs)
+
+    @contextmanager
+    def inner():
+        session = session_cls()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logging.error(e)
+            raise
+        finally:
+            session.close()
+
+    return inner
 
 
 class Store:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self):
         self._engine = self.get_engine()
-        self.con = self._engine.connect()
-        self._metadata = db.MetaData()
-        self._table_name = 'processed'
+        self._session_context = get_session(bind=self._engine)
 
     @staticmethod
     def get_engine():
@@ -22,22 +51,15 @@ class Store:
         engine = db.create_engine(con_str)
         return engine
 
-    def check(self, video_id:str):
-        table = db.Table(self._table_name, self._metadata, autoload=True, autoload_with=self._engine)
+    def check(self, video_id: str) -> List[ProcessedTable]:
+        with self._session_context() as s:
+            result = s.query(ProcessedTable).filter_by(video_id=video_id).all()
+            return result if result else None
 
-        query = db.select([table]).where(table.c.video_id == video_id)
-
-        result = self.con.execute(query).fetchone()
-
-        return result
-
-    def save(self, chat_id, message_id, video_id, link):
-        table = db.Table(self._table_name, self._metadata, autoload=True, autoload_with=self._engine)
-
-        query = db.insert(table).values(video_id=video_id, chat_id=chat_id, message_id=message_id,
-                                        link=link)
-
-        self.con.execute(query)
+    def save(self, chat_id, message_id, video_id, link, part):
+        processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
+        with self._session_context() as s:
+            s.add(processed)
 
 
 if __name__ == "__main__":
