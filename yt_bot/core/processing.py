@@ -15,8 +15,8 @@ from utils import emoji
 
 
 class UserInputError(Exception):
-    def __init__(self):
-        self.msg = f'Invalid link {emoji.exclamation_mark}'
+    def __init__(self, msg=None):
+        self.msg = msg or f'Invalid link {emoji.exclamation_mark}'
         super().__init__(self.msg)
 
 
@@ -60,6 +60,8 @@ class DownloadProcessor(AbstractProcessor):
         self._pre_processor = PreDownload(chat_id, message, bot)
         self._post_processor = PostDownload()
 
+        self._allowed_size = 49_000_000
+
     def run(self):
         validation_result = self._pre_processor.check()
         if validation_result.forward:
@@ -70,12 +72,15 @@ class DownloadProcessor(AbstractProcessor):
         with DirContext(self._chat_id, self._message_id) as context:
             filename = self.download()
             path = os.path.join(os.getcwd(), filename)
+            if self.large_file(path):
+                raise UserInputError("Video is too large, can't handle it for now")
             try:
                 msg = self._bot.send_audio(self._chat_id, open(path, 'rb'), timeout=1000)
             except Exception as e:
                 logging.error(e)
             else:
-                self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id, validation_result.link)
+                self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id,
+                                               validation_result.link)
 
     def download(self) -> str:
         try:
@@ -88,6 +93,12 @@ class DownloadProcessor(AbstractProcessor):
 
     def forward(self, from_chat_id, message_id) -> None:
         self._bot.forward_message(self._chat_id, from_chat_id, message_id)
+
+    def large_file(self, filepath) -> bool:
+        filesize = os.stat(filepath).st_size
+        if filesize > self._allowed_size:
+            return True
+        return False
 
 
 class PostDownload:
