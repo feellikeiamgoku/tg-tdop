@@ -11,7 +11,7 @@ class ValidationResult:
         self.forward = None
 
     def set_forward(self, to_forward: Iterable) -> None:
-        if isinstance(to_forward, Iterable):
+        if isinstance(to_forward, Iterable) and to_forward:
             self.forward = to_forward
 
 

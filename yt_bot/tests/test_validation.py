@@ -44,3 +44,11 @@ class TestValidation:
         assert isinstance(result, ValidationResult)
         assert result.link == 'https://www.youtube.com/watch?v=XXYlFuWEuKf'
         assert result.video_id == 'XXYlFuWEuKf'
+
+    def test_validation_result(self):
+        validation_result = ValidationResult('link', '1234')
+        validation_result.set_forward([])
+        assert validation_result.forward is None
+
+        validation_result.set_forward([1, 2, 3])
+        assert validation_result.forward == [1, 2, 3]
