@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Union
 
 from yt_bot.db.tables import ProcessedTable
 
@@ -41,22 +41,26 @@ class Store:
             cls._instance = super().__new__(cls, *args, **kwargs)
         return cls._instance
 
-    def __init__(self):
-        self._engine = self.get_engine()
-        self._session_context = get_session(bind=self._engine)
-
     @staticmethod
-    def get_engine():
-        host = os.getenv('HOST')
-        port = os.getenv('PORT')
-        db_name = os.getenv('DB')
-        user = os.getenv('USER')
-        password = os.getenv('PASSWORD')
-        con_str = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
+    def get_engine(con_str=None):
+        if con_str is None:
+            host = os.getenv('HOST')
+            port = os.getenv('PORT')
+            db_name = os.getenv('DB')
+            user = os.getenv('USER')
+            password = os.getenv('PASSWORD')
+            con_str = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
         engine = db.create_engine(con_str)
         return engine
 
-    def check(self, video_id: str) -> List[ForwardResult]:
+
+class ProcessedStore(Store):
+
+    def __init__(self) -> None:
+        self._engine = self.get_engine()
+        self._session_context = get_session(bind=self._engine)
+
+    def check(self, video_id: str) -> Union[List[ForwardResult], None]:
         with self._session_context() as s:
             results = s.query(ProcessedTable).filter_by(video_id=video_id).all()
             if results:
@@ -65,12 +69,11 @@ class Store:
             else:
                 return None
 
-    def save(self, chat_id, message_id, video_id, link, part):
+    def save(self, chat_id, message_id, video_id, link, part) -> None:
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
         with self._session_context() as s:
             s.add(processed)
 
 
 if __name__ == "__main__":
-    db = Store()
-    db.check('dexiQGxBNFw')
+    pass

@@ -4,7 +4,7 @@ from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
 from yt_bot.core.processing import DownloadProcessor, UserInputError
-from yt_bot.db.initialize import Initializer
+from yt_bot.db import initializer
 
 
 @run_async
@@ -26,7 +26,7 @@ def setup():
                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     token = os.getenv("BOT_TOKEN")
-    Initializer.run()
+    initializer.run()
 
     bot = Bot(token)
     updater = Updater(bot=bot)

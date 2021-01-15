@@ -1,22 +1,24 @@
-from yt_bot.db.store import Store
-from yt_bot.db.tables import ProcessedTable
+from yt_bot.db.processedstore import Store
+from yt_bot.db.tables import _Base
 
 
 class Initializer:
-    _registered = []
 
-    @classmethod
-    def register(cls, table_class):
-        cls._registered.append(table_class)
-        return table_class
+    def __init__(self):
+        self._store = Store()
+        self._registered = []
 
-    @classmethod
-    def run(cls):
-        engine = Store.get_engine()
-        for table in cls._registered:
-            table.__table__.create(bind=engine, checkfirst=True)
+    def register(self, table_class):
+        if issubclass(table_class, _Base):
+            self._registered.append(table_class)
+            return table_class
+        raise TypeError("Can only register tables from instances of 'declarative base'")
 
+    def run(self):
+        engine = self._store.get_engine()
+        for table in self._registered:
+            if issubclass(table, _Base):
+                table.__table__.create(bind=engine, checkfirst=True)
+            else:
+                raise TypeError("Can only create tables from instances of 'declarative base'")
 
-# Register tables to create on bot start up
-
-Initializer.register(ProcessedTable)
