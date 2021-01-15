@@ -1,11 +1,11 @@
-from yt_bot.db.store import ProcessedStore
-from yt_bot.db.tables import _Base, ProcessedTable
+from yt_bot.db.store import Store
+from yt_bot.db.tables import _Base
 
 
 class Initializer:
 
     def __init__(self):
-        self._store = ProcessedStore
+        self._store = Store
         self._registered = []
 
     def register(self, table_class):

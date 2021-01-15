@@ -1,17 +1,16 @@
-import os
 import logging
+import os
 from abc import ABC
 
-from youtube_dl import YoutubeDL, DownloadError
 from telegram.bot import Bot
-
-from yt_bot.db.store import ProcessedStore
-from yt_bot.constants import YDL_OPTS
-from yt_bot.validation.validators import VideoValidator, ValidationResult
-from yt_bot.validation.exceptions import ValidationError
-from yt_bot.yt.context import DirContext
+from youtube_dl import YoutubeDL, DownloadError
 
 from utils import emoji
+from utils.context import DirContext
+from yt_bot.constants import YDL_OPTS
+from yt_bot.db.store import ProcessedStore
+from yt_bot.validation.exceptions import ValidationError
+from yt_bot.validation.validators import VideoValidator, ValidationResult
 
 
 class UserInputError(Exception):

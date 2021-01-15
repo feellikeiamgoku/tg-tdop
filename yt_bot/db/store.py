@@ -33,17 +33,16 @@ class ForwardResult(NamedTuple):
     message_id: str
 
 
-class ProcessedStore:
-    _instance = None
+class Store:
+    _instances = {}
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+        if not cls._instances.get(cls):
+            cls._instances[cls] = super().__new__(cls)
+        return cls._instances[cls]
 
-    def __init__(self, con_str=None) -> None:
+    def __init__(self, con_str=None):
         self._engine = self._get_engine(con_str)
-        self._session_context = get_session(bind=self._engine)
 
     @staticmethod
     def _get_engine(con_str=None):
@@ -56,6 +55,17 @@ class ProcessedStore:
             con_str = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
         engine = db.create_engine(con_str)
         return engine
+
+    @property
+    def engine(self):
+        return self._engine
+
+
+class ProcessedStore(Store):
+
+    def __init__(self, con_str=None) -> None:
+        super().__init__(con_str)
+        self._session_context = get_session(bind=self._engine)
 
     def check(self, video_id: str) -> Union[List[ForwardResult], None]:
         with self._session_context() as s:
@@ -70,10 +80,6 @@ class ProcessedStore:
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
         with self._session_context() as s:
             s.add(processed)
-
-    @property
-    def engine(self):
-        return self._engine
 
 
 if __name__ == "__main__":

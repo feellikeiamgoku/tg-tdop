@@ -1,8 +1,10 @@
-import pytest
+from types import FunctionType
 from unittest import mock
 
-from yt_bot.db.store import get_session, ProcessedStore, ForwardResult
+import pytest
+
 from yt_bot.db.initialize import Initializer
+from yt_bot.db.store import ProcessedStore, ForwardResult, Store, get_session
 from yt_bot.db.tables import ProcessedTable
 
 
@@ -21,7 +23,7 @@ def fake_table():
 
 class TestInitialize:
 
-    @mock.patch('yt_bot.db.initialize.ProcessedStore._get_engine')
+    @mock.patch('yt_bot.db.initialize.Store._get_engine')
     def test_register(self, engine, table):
         initializer = Initializer()
         initializer.register(table)
@@ -30,7 +32,7 @@ class TestInitialize:
         with pytest.raises(TypeError):
             initializer.register('table')
 
-    @mock.patch('yt_bot.db.initialize.ProcessedStore._get_engine')
+    @mock.patch('yt_bot.db.initialize.Store._get_engine')
     def test_run(self, engine, table, fake_table):
         initializer = Initializer()
         initializer._registered.append(table)
@@ -41,30 +43,69 @@ class TestInitialize:
             initializer.run()
 
 
-class TestProcessedStore:
-
-    @mock.patch('yt_bot.db.initialize.ProcessedStore._get_engine')
+class TestStore:
+    @mock.patch('yt_bot.db.initialize.Store._get_engine')
     def test_singleton(self, engine):
-        store = ProcessedStore()
+        store = Store()
 
-        store2 = ProcessedStore()
+        store2 = Store()
         assert store is store2
 
     @mock.patch('yt_bot.db.store.db.create_engine')
     def test_get_engine(self, engine):
         with pytest.raises(KeyError):
-            store = ProcessedStore()
+            store = Store()
 
     def test_same_engine(self):
+        store = Store('sqlite://')
+
+        store2 = Store('sqlite://')
+
+        assert store.engine is store2.engine
+
+
+class TestProcessedStore:
+
+    @pytest.fixture
+    def setup_db(self):
         pr_store = ProcessedStore('sqlite://')
 
-        pr_store2 = ProcessedStore('sqlite://')
+        ProcessedTable.__table__.create(bind=pr_store.engine, checkfirst=True)
+        pr_store.engine.execute('''
+        insert into processed (video_id, link, chat_id, message_id, part) 
+        values('test', 'link', 1, 2, 1),
+               ('test', 'link', 1, 3, 1),
+               ('another_test', 'link', 2, 8, 1)
+               ''')
+        return pr_store
 
-        assert pr_store.engine is pr_store2.engine
+    def test_check(self, setup_db: ProcessedStore):
+        store = setup_db
+        value = store.check('xyz')
+        assert value is None
+
+        value = store.check('another_test')
+        assert isinstance(value[0], ForwardResult)
+        assert value[0].chat_id == 2
+        assert value[0].message_id == 8
+
+        value = store.check('test')
+        assert len(value) == 2
+
+    def test_save(self, setup_db: ProcessedStore):
+        store = setup_db
+        store.save(1, 2, 'from_test_save', 'link', 1)
+        value = store.engine.execute('''
+        select * from processed where video_id = 'from_test_save'
+        ''').fetchall()
+        assert value[0][1] == 'from_test_save'
 
 
-def test_session_context():
-    pass
+@mock.patch('yt_bot.db.store.sessionmaker')
+def test_session_context(sessionmaker):
+    session_func = get_session()
+    assert sessionmaker.called
+    assert isinstance(session_func, FunctionType)
 
 
 pytest.main()
