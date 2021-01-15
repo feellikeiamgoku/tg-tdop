@@ -1,4 +1,4 @@
-from yt_bot.db.processedstore import ProcessedStore
+from yt_bot.db.store import ProcessedStore
 
 
 def save_processed(chat_id, message_id, video_id, link):

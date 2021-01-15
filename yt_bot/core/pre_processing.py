@@ -1,7 +1,7 @@
 from typing import Tuple, Union
 
 from utils import emoji
-from yt_bot.db.processedstore import ProcessedStore
+from yt_bot.db.store import ProcessedStore
 
 from yt_bot.validation.validators import VideoValidator, ValidationError, ValidationResult
 

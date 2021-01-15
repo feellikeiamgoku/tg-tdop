@@ -1,4 +1,3 @@
-import os
 import logging
 from contextlib import contextmanager
 
@@ -7,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from typing import List, NamedTuple, Union
 
 from yt_bot.db.tables import ProcessedTable
+from utils.env import get_env
 
 
 def get_session(*args, **kwargs):
@@ -33,32 +33,29 @@ class ForwardResult(NamedTuple):
     message_id: str
 
 
-class Store:
+class ProcessedStore:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super().__new__(cls, *args, **kwargs)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
+    def __init__(self, con_str=None) -> None:
+        self._engine = self._get_engine(con_str)
+        self._session_context = get_session(bind=self._engine)
+
     @staticmethod
-    def get_engine(con_str=None):
+    def _get_engine(con_str=None):
         if con_str is None:
-            host = os.getenv('HOST')
-            port = os.getenv('PORT')
-            db_name = os.getenv('DB')
-            user = os.getenv('USER')
-            password = os.getenv('PASSWORD')
+            host = get_env('HOST')
+            port = get_env('PORT')
+            db_name = get_env('DB')
+            user = get_env('USER')
+            password = get_env('PASSWORD')
             con_str = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
         engine = db.create_engine(con_str)
         return engine
-
-
-class ProcessedStore(Store):
-
-    def __init__(self) -> None:
-        self._engine = self.get_engine()
-        self._session_context = get_session(bind=self._engine)
 
     def check(self, video_id: str) -> Union[List[ForwardResult], None]:
         with self._session_context() as s:
@@ -73,6 +70,10 @@ class ProcessedStore(Store):
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
         with self._session_context() as s:
             s.add(processed)
+
+    @property
+    def engine(self):
+        return self._engine
 
 
 if __name__ == "__main__":

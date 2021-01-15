@@ -5,7 +5,7 @@ from abc import ABC
 from youtube_dl import YoutubeDL, DownloadError
 from telegram.bot import Bot
 
-from yt_bot.db.processedstore import ProcessedStore
+from yt_bot.db.store import ProcessedStore
 from yt_bot.constants import YDL_OPTS
 from yt_bot.validation.validators import VideoValidator, ValidationResult
 from yt_bot.validation.exceptions import ValidationError

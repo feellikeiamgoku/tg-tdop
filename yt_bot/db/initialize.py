@@ -1,11 +1,11 @@
-from yt_bot.db.processedstore import Store
-from yt_bot.db.tables import _Base
+from yt_bot.db.store import ProcessedStore
+from yt_bot.db.tables import _Base, ProcessedTable
 
 
 class Initializer:
 
     def __init__(self):
-        self._store = Store()
+        self._store = ProcessedStore
         self._registered = []
 
     def register(self, table_class):
@@ -15,10 +15,9 @@ class Initializer:
         raise TypeError("Can only register tables from instances of 'declarative base'")
 
     def run(self):
-        engine = self._store.get_engine()
+        engine = self._store._get_engine()
         for table in self._registered:
             if issubclass(table, _Base):
                 table.__table__.create(bind=engine, checkfirst=True)
             else:
                 raise TypeError("Can only create tables from instances of 'declarative base'")
-
