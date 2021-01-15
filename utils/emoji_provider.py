@@ -9,5 +9,4 @@ class Emoji:
 
 
 if __name__ == "__main__":
-    res = emoji.demojize(':raibow:')
-    print(res)
+    pass

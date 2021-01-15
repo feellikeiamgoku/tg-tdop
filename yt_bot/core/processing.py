@@ -30,9 +30,9 @@ class Download(TelegramMixin):
                 self.forward(reply.chat_id, reply.message_id)
             return
 
-        with DirContext(self._chat_id, self._message_id) as context:
+        with DirContext(self._chat_id, self._message_id) as dir_path:
             filename = self.download()
-            path = os.path.join(os.getcwd(), filename)
+            path = os.path.join(dir_path, filename)
             if self.large_file(path):
                 raise UserInputError("Video is too large, can't handle it for now")
             try:
