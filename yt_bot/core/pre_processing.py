@@ -1,24 +1,32 @@
-from typing import Tuple, Union
+from telegram.bot import Bot
 
 from utils import emoji
+from yt_bot.core.exceptions import UserInputError
+from yt_bot.core.mixins import TelegramMixin
 from yt_bot.db.store import ProcessedStore
-
-from yt_bot.validation.validators import VideoValidator, ValidationError, ValidationResult
-
-
-def get_further_processing(message: str) -> Tuple[Union[ValidationResult, None], str]:
-    """Returns definition and message for further sending"""
-    try:
-        validator = VideoValidator(message)
-        validation_result = validator.validate()
-    except ValidationError:
-        return None, f'Invalid link, please, take a look at provided link {emoji.exclamation_mark}'
-    else:
-        return validation_result, f'Processing your video... {emoji.robot}'
+from yt_bot.validation.validators import VideoValidator, ValidationResult, ValidationError
 
 
-def check_processed(video_id: str):
-    db = ProcessedStore()
-    result = db.check(video_id)
-    if result:
-        return str(result['chat_id']), str(result['message_id'])
+class PreDownload(TelegramMixin):
+
+    def __init__(self, chat_id: str, message: str, bot: Bot):
+        self._chat_id = chat_id
+        self._bot = bot
+        self._validator = VideoValidator(message)
+        self._db = ProcessedStore()
+
+    def check(self) -> ValidationResult:
+        """Do checks before start processing"""
+        try:
+            validation_result = self._validator.validate()
+            self.notify(f'Processing your video... {emoji.robot}')
+        except ValidationError:
+            raise UserInputError()
+
+        to_forward = self.get_to_forward(validation_result)
+        validation_result.set_forward(to_forward)
+        return validation_result
+
+    def get_to_forward(self, validation_result: ValidationResult):
+        result = self._db.check(validation_result.video_id)
+        return result or None

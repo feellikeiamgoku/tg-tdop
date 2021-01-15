@@ -3,7 +3,7 @@ import logging
 from telegram.ext import Updater, Filters, MessageHandler, run_async
 from telegram.bot import Bot
 
-from yt_bot.core.processing import DownloadProcessor, UserInputError
+from yt_bot.core.processing import Download, UserInputError
 from yt_bot.db import initializer
 
 
@@ -13,7 +13,7 @@ def process_link(update, context):
     chat_id = update.effective_chat.id
     message_id = update.effective_message.message_id
     bot = context.bot
-    processor = DownloadProcessor(chat_id, message_id, message, bot)
+    processor = Download(chat_id, message_id, message, bot)
 
     try:
         processor.run()
