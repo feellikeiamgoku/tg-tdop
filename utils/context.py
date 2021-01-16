@@ -1,9 +1,9 @@
 import os
 import pathlib
 import shutil
-
 from typing import Union
 
+# Todo: deprecated since now, remove in next commits
 
 class DirContext:
 

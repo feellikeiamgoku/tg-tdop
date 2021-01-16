@@ -23,6 +23,7 @@ def process_link(update, context):
         processor.notify(e.msg)
     except Exception as e:
         logging.error(e)
+        processor.notify('Something bad happen, please, try again later.')
 
 
 def setup():

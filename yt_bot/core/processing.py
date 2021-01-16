@@ -4,12 +4,12 @@ import os
 from telegram.bot import Bot
 from youtube_dl import YoutubeDL, DownloadError
 
-from utils.context import DirContext
 from yt_bot.constants import YDL_OPTS
 from yt_bot.core.exceptions import UserInputError
 from yt_bot.core.mixins import TelegramMixin
 from yt_bot.core.post_processing import PostDownload
 from yt_bot.core.pre_processing import PreDownload
+from yt_bot.db.redis_store import RunningVidTracker
 
 
 class Download(TelegramMixin):
@@ -20,6 +20,7 @@ class Download(TelegramMixin):
         self._bot = bot
         self._pre_processor = PreDownload(chat_id, message, bot)
         self._post_processor = PostDownload()
+        self._tracker = RunningVidTracker()
         self._allowed_size = 49_000_000
 
     def run(self):
@@ -29,9 +30,15 @@ class Download(TelegramMixin):
                 self.forward(reply.chat_id, reply.message_id)
             return
 
-        with DirContext(self._chat_id, self._message_id) as dir_path:
+        if not self._tracker.is_running(validation_result.video_id):
+            self._tracker.store_running(validation_result.video_id, self._chat_id)
+        else:
+            self._tracker.store_waiting(validation_result.video_id, self._chat_id)
+            return
+
+        try:
             filename = self.download()
-            path = os.path.join(dir_path, filename)
+            path = os.path.join(os.getcwd(), filename)
             if self.large_file(path):
                 raise UserInputError("Video is too large, can't handle it for now")
             try:
@@ -39,9 +46,15 @@ class Download(TelegramMixin):
             except Exception as e:
                 logging.error(e)
             else:
+                os.remove(path)
                 self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id,
                                                validation_result.link)
                 self._post_processor.update_rate(self._chat_id)
+                waiting = self._tracker.retrieve_waiting(validation_result.video_id)
+                for chat in waiting:
+                    self.forward(self._chat_id, msg.message_id, to_chat=chat)
+        finally:
+            self._tracker.free(validation_result.video_id)
 
     def download(self) -> str:
         try:

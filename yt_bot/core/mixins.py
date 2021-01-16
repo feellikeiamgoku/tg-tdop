@@ -11,6 +11,7 @@ class TelegramMixin(ABC):
         msg = self._bot.send_audio(self._chat_id, open(filepath, 'rb'), timeout=timeout)
         return msg
 
-    def forward(self, from_chat_id, message_id):
-        msg = self._bot.forward_message(self._chat_id, from_chat_id, message_id)
+    def forward(self, from_chat_id, message_id, to_chat=None):
+        to_chat = to_chat if to_chat else self._chat_id
+        msg = self._bot.forward_message(to_chat, from_chat_id, message_id)
         return msg
