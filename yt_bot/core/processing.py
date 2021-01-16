@@ -20,7 +20,6 @@ class Download(TelegramMixin):
         self._bot = bot
         self._pre_processor = PreDownload(chat_id, message, bot)
         self._post_processor = PostDownload()
-
         self._allowed_size = 49_000_000
 
     def run(self):
@@ -42,6 +41,7 @@ class Download(TelegramMixin):
             else:
                 self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id,
                                                validation_result.link)
+                self._post_processor.update_rate(self._chat_id)
 
     def download(self) -> str:
         try:

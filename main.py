@@ -1,9 +1,11 @@
-import os
 import logging
-from telegram.ext import Updater, Filters, MessageHandler, run_async
-from telegram.bot import Bot
+import os
 
-from yt_bot.core.processing import Download, UserInputError
+from telegram.bot import Bot
+from telegram.ext import Updater, Filters, MessageHandler, run_async
+
+from yt_bot.core.exceptions import UserInputError, UserLimitError
+from yt_bot.core.processing import Download
 from yt_bot.db import initializer
 
 
@@ -17,8 +19,10 @@ def process_link(update, context):
 
     try:
         processor.run()
-    except UserInputError as e:
+    except (UserInputError, UserLimitError) as e:
         processor.notify(e.msg)
+    except Exception as e:
+        logging.error(e)
 
 
 def setup():

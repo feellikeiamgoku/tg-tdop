@@ -53,7 +53,7 @@ class Store:
             user = get_env('USER')
             password = get_env('PASSWORD')
             con_str = f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
-        engine = db.create_engine(con_str)
+        engine = db.create_engine(con_str, pool_size=10, pool_recycle=600)
         return engine
 
     @property

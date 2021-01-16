@@ -9,3 +9,5 @@ YDL_OPTS = {
     }],
     'quiet': True
 }
+
+RATE_LIMIT = 25
