@@ -7,7 +7,7 @@ from yt_bot.db.redis_store import RedisStore, RateLimiter, LimiterError, RATE_LI
     RunningContextError
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='module', autouse=True)
 def redis_env():
     os.environ['REDIS_HOST'] = ''
     os.environ['REDIS_PASSWORD'] = ''
@@ -16,7 +16,7 @@ def redis_env():
 class TestRedisStore:
 
     @patch('yt_bot.db.redis_store.redis.Redis')
-    def test_singleton(self, redis, redis_env):
+    def test_singleton(self, redis):
         rs = RedisStore()
         rs2 = RedisStore()
         assert rs is rs2
