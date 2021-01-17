@@ -9,7 +9,7 @@ from yt_bot.core.exceptions import UserInputError
 from yt_bot.core.mixins import TelegramMixin
 from yt_bot.core.post_processing import PostDownload
 from yt_bot.core.pre_processing import PreDownload
-from yt_bot.db.redis_store import RunningVidTracker
+from yt_bot.db.redis_store import RunningContext
 
 
 class Download(TelegramMixin):
@@ -20,7 +20,6 @@ class Download(TelegramMixin):
         self._bot = bot
         self._pre_processor = PreDownload(chat_id, message, bot)
         self._post_processor = PostDownload()
-        self._tracker = RunningVidTracker()
         self._allowed_size = 49_000_000
 
     def run(self):
@@ -30,31 +29,33 @@ class Download(TelegramMixin):
                 self.forward(reply.chat_id, reply.message_id)
             return
 
-        if not self._tracker.is_running(validation_result.video_id):
-            self._tracker.store_running(validation_result.video_id, self._chat_id)
-        else:
-            self._tracker.store_waiting(validation_result.video_id, self._chat_id)
-            return
-
-        try:
-            filename = self.download()
-            path = os.path.join(os.getcwd(), filename)
-            if self.large_file(path):
-                raise UserInputError("Video is too large, can't handle it for now")
-            try:
-                msg = self.send_audio(path)
-            except Exception as e:
-                logging.error(e)
+        with RunningContext(validation_result.video_id, self._chat_id) as tracker:
+            if not tracker.running_state:
+                tracker.store_running()
+                filename = self.download()
+                path = os.path.join(os.getcwd(), filename)
+                if self.large_file(path):
+                    # if error occures won't send file to all requesting users
+                    os.remove(path)
+                    raise UserInputError("Video is too large, can't handle it for now")
+                try:
+                    msg = self.send_audio(path)
+                except Exception as e:
+                    logging.error(e)
+                    raise
+                else:
+                    self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id,
+                                                   validation_result.link)
+                    self._post_processor.update_rate(self._chat_id)
+                    waiting = tracker.retrieve_waiting()
+                    for chat in waiting:
+                        if self._chat_id != chat:
+                            self.forward(self._chat_id, msg.message_id, to_chat=chat)
+                finally:
+                    os.remove(path)
             else:
-                os.remove(path)
-                self._post_processor.post_save(self._chat_id, msg.message_id, validation_result.video_id,
-                                               validation_result.link)
-                self._post_processor.update_rate(self._chat_id)
-                waiting = self._tracker.retrieve_waiting(validation_result.video_id)
-                for chat in waiting:
-                    self.forward(self._chat_id, msg.message_id, to_chat=chat)
-        finally:
-            self._tracker.free(validation_result.video_id)
+                tracker.store_waiting()
+                return
 
     def download(self) -> str:
         try:

@@ -9,6 +9,10 @@ class LimiterError(Exception):
     pass
 
 
+class RunningContextError(Exception):
+    pass
+
+
 class RedisStore(Store):
 
     def __init__(self, **kwargs):
@@ -47,28 +51,22 @@ class RateLimiter(RedisStore):
         return time
 
 
-class RunningVidTracker(RedisStore):
+class RunningTracker(RedisStore):
 
     def __init__(self):
         self._currently_processing_db = self._get_engine(db=0)
         self._await_processing_db = self._get_engine(db=1)
 
     def store_running(self, video_id: str, chat_id: str):
-        if not self.is_running(video_id):
-            self._currently_processing_db.set(video_id, chat_id)
-        else:
-            raise Exception('Store while running.')
+        self._currently_processing_db.set(video_id, chat_id)
 
     def is_running(self, video_id: str) -> bool:
         return bool(self._currently_processing_db.get(video_id))
 
     def store_waiting(self, video_id: str, chat_id: str):
-        if self.is_running(video_id):
-            self._await_processing_db.sadd(video_id, chat_id)
-        else:
-            raise Exception('Store waiting, while no running')
+        self._await_processing_db.sadd(video_id, chat_id)
 
-    def retrieve_waiting(self, video_id: str):
+    def retrieve_waiting(self, video_id: str) -> set:
         chats = self._await_processing_db.smembers(video_id)
         return chats
 
@@ -81,6 +79,38 @@ class RunningVidTracker(RedisStore):
 
     def _free_waiting(self, video_id: str):
         self._await_processing_db.delete(video_id)
+
+
+class RunningContext:
+
+    def __init__(self, video_id, chat_id):
+        self._tracker = RunningTracker()
+        self._video_id = video_id
+        self._chat_id = chat_id
+        self.running_state = None
+
+    def __enter__(self):
+        self.running_state = self._tracker.is_running(self._video_id)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.running_state:
+            self._tracker.free(self._video_id)
+
+    def store_running(self):
+        if not self.running_state:
+            self._tracker.store_running(self._video_id, self._chat_id)
+        else:
+            raise RunningContextError('Store same video id, while same video id processing')
+
+    def store_waiting(self):
+        if self.running_state:
+            self._tracker.store_waiting(self._video_id, self._chat_id)
+        else:
+            raise RunningContextError('Store waiting, while no running')
+
+    def retrieve_waiting(self):
+        return self._tracker.retrieve_waiting(self._video_id)
 
 
 if __name__ == '__main__':
