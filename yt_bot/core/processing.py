@@ -49,7 +49,7 @@ class Download(TelegramMixin):
                     self._post_processor.update_rate(self._chat_id)
                     waiting = tracker.retrieve_waiting()
                     for chat in waiting:
-                        if self._chat_id != chat:
+                        if self._chat_id != int(chat):
                             self.forward(self._chat_id, msg.message_id, to_chat=chat)
                 finally:
                     os.remove(path)
