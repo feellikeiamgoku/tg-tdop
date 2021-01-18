@@ -1,10 +1,7 @@
-import pytest
-
-from yt_bot.validation.validators import ValidationResult, VideoValidator
-from yt_bot.validation.exceptions import ValidationError
+from yt_bot.validation.validators import ValidationResult, VideoValidator, PlaylistValidator, PlaylistValidationResult
 
 
-class TestValidation:
+class TestVideoValidation:
 
     def test_validation(self):
         web_message = 'https://www.youtube.com/watch?v=RsQXVJOgvNY'
@@ -21,21 +18,21 @@ class TestValidation:
         assert result.link == mobile_message
         assert result.video_id == 'X2xbLV_NSbk'
 
-    def test_validation_errors(self):
+    def test_invalid_validation(self):
         message = 'some invalid message'
         validator = VideoValidator(message)
-        with pytest.raises(ValidationError):
-            result = validator.validate()
+        result = validator.validate()
+        assert result is None
 
         incomplete_link = 'www.youtu.be/'
         validator = VideoValidator(incomplete_link)
-        with pytest.raises(ValidationError):
-            result = validator.validate()
+        result = validator.validate()
+        assert result is None
 
         incomplete_link = 'youtube.com/watch?v='
         validator = VideoValidator(incomplete_link)
-        with pytest.raises(ValidationError):
-            result = validator.validate()
+        result = validator.validate()
+        assert result is None
 
     def test_link_inside_text(self):
         message = 'eg egqweg gew gwe dfiowedg gdj\nhttps://www.youtube.com/watch?v=XXYlFuWEuKf worg gg egqwe'
@@ -52,3 +49,29 @@ class TestValidation:
 
         validation_result.set_forward([1, 2, 3])
         assert validation_result.forward == [1, 2, 3]
+
+
+class TestPlaylistValidator:
+    def test_validation(self):
+        message = 'https://www.youtube.com/playlist?list=PLHZ8Vq26Cys9-CrgqrFIYqR1Flp3OLqYr'
+        validator = PlaylistValidator(message)
+        result = validator.validate()
+        assert isinstance(result, PlaylistValidationResult)
+        assert result.link == message
+
+        message = 'youtube.com/playlist?list=PLHZ8Vq26Cys9-CrgqrFIYqR1Flp3OLqYr'
+        validator = PlaylistValidator(message)
+        result = validator.validate()
+        assert isinstance(result, PlaylistValidationResult)
+        assert result.link == message
+
+    def test_invalid_validation(self):
+        message = 'https://www.youtube.com/playlist?list= dgsd'
+        validator = PlaylistValidator(message)
+        result = validator.validate()
+        assert result is None
+
+        message = 'https://www.youtube.com/watch?v=RsQXVJOgvNY'
+        validator = PlaylistValidator(message)
+        result = validator.validate()
+        assert result is None

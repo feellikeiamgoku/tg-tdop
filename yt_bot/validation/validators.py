@@ -1,7 +1,6 @@
 import re
+from abc import ABC, abstractmethod
 from typing import Iterable
-
-from yt_bot.validation.exceptions import ValidationError
 
 
 class ValidationResult:
@@ -15,13 +14,25 @@ class ValidationResult:
             self.forward = to_forward
 
 
-class VideoValidator:
-    validation_pattern = re.compile(
-        r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})'
-    )
+class PlaylistValidationResult:
+    def __init__(self, link: str):
+        self.link = link
+
+
+class BaseValidator(ABC):
 
     def __init__(self, message: str):
         self.message = message
+
+    @abstractmethod
+    def validate(self):
+        pass
+
+
+class VideoValidator(BaseValidator):
+    validation_pattern = re.compile(
+        r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})'
+    )
 
     def validate(self) -> ValidationResult:
         link = re.search(self.validation_pattern, self.message)
@@ -29,5 +40,14 @@ class VideoValidator:
             full_link = link.group(0)
             video_id = link.group(1)
             return ValidationResult(full_link, video_id)
-        else:
-            raise ValidationError("Invalid youtube link.")
+
+
+class PlaylistValidator(BaseValidator):
+    validation_pattern = re.compile(
+        r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/)(?:playlist\?list=)[^\s](.+)'
+    )
+
+    def validate(self) -> PlaylistValidationResult:
+        link = re.fullmatch(self.validation_pattern, self.message)
+        if link:
+            return PlaylistValidationResult(link.string)
