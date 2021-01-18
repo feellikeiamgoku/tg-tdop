@@ -1,29 +1,11 @@
 import logging
 import os
 
-from telegram.bot import Bot
-from telegram.ext import Updater, Filters, MessageHandler, run_async
+from telegram.ext import Updater, Filters, MessageHandler
 
-from yt_bot.core.exceptions import UserInputError, UserLimitError
-from yt_bot.core.processing import Download
+
 from yt_bot.db import initializer
-
-
-@run_async
-def process_link(update, context):
-    message = update.message.text
-    chat_id = update.effective_chat.id
-    message_id = update.effective_message.message_id
-    bot = context.bot
-    processor = Download(chat_id, message_id, message, bot)
-
-    try:
-        processor.run()
-    except (UserInputError, UserLimitError) as e:
-        processor.notify(e.msg)
-    except Exception as e:
-        logging.error(e)
-        processor.notify('Something bad happen, please, try again later.')
+from yt_bot.core.handlers import ValidationHandler,pre_download_check, process_file
 
 
 def setup():
@@ -33,11 +15,12 @@ def setup():
     token = os.getenv("BOT_TOKEN")
     initializer.run()
 
-    bot = Bot(token)
-    updater = Updater(bot=bot)
+    updater = Updater(token=token)
     dispatcher = updater.dispatcher
-    link_handler = MessageHandler(Filters.text & (~Filters.command), process_link)
+    link_handler = MessageHandler(Filters.text & (~Filters.command), pre_download_check)
+    after_handler = ValidationHandler(process_file, run_async=True)
     dispatcher.add_handler(link_handler)
+    dispatcher.add_handler(after_handler)
     updater.start_polling()
 
 

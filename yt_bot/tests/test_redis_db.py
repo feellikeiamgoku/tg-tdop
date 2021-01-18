@@ -120,50 +120,75 @@ class TestRunningTracker:
         mock_free_waiting.assert_called_with('video_id')
 
 
+@patch('yt_bot.db.redis_store.ProcessedStore')
 @patch('yt_bot.db.redis_store.redis.Redis')
 class TestRunningContext:
 
-    def test_enter_exit(self, mock_redis):
-        tracker_mock = Mock()
+    def test_enter_exit(self, mock_redis, mock_db):
         running_context = RunningContext('video_id', 'chat_id')
-        running_context._tracker = tracker_mock
+        running_context._tracker = Mock()
+        running_context._rate_limiter = Mock()
+
         running_context._tracker.is_running.return_value = False
 
         with running_context as context:
             assert context.running_state is False
-            running_context._tracker.is_running_assert_called_with('video_id')
-        running_context._tracker.free.assert_called_with('video_id')
+            running_context._tracker.is_running.assert_called_with('video_id')
 
+        running_context._tracker.free.assert_called_with('video_id')
+        running_context._rate_limiter.set_rate.assert_called_with('chat_id')
         running_context._tracker.reset_mock()
 
         running_context._tracker.is_running.return_value = True
         with running_context as context:
             assert context.running_state is True
-            running_context._tracker.is_running_assert_called_with('video_id')
+            running_context._tracker.is_running.assert_called_with('video_id')
         running_context._tracker.free.assert_not_called()
+        running_context._rate_limiter.assert_not_called()
 
-    def test_store_running(self, mock_redis):
+    @patch('yt_bot.db.redis_store.RunningContext._store_running')
+    @patch('yt_bot.db.redis_store.RunningContext._store_waiting')
+    def test_enter(self, store_waiting, store_running, mock_redis, mock_db):
+        context = RunningContext('video_id', 'chat_id')
+        context._tracker = Mock()
+
+        context._tracker.is_running.return_value = False
+        with context as c:
+            store_running.assert_called()
+            store_waiting.assert_not_called()
+
+        context._tracker.is_running.return_value = True
+        store_waiting.reset_mock()
+        store_running.reset_mock()
+
+        with context as c:
+            store_running.assert_not_called()
+            store_waiting.assert_called()
+
+    def test_store_running(self, mock_redis, mock_db):
         tracker_mock = Mock()
         running_context = RunningContext('video_id', 'chat_id')
         running_context.running_state = True
         running_context._tracker = tracker_mock
 
         with pytest.raises(RunningContextError):
-            running_context.store_running()
+            running_context._store_running()
 
         running_context.running_state = False
-        running_context.store_running()
+        running_context._store_running()
         running_context._tracker.store_running.assert_called_with('video_id','chat_id')
 
-    def test_store_waiting(self, mock_redis):
+    def test_store_waiting(self, mock_redis, mock_db):
         tracker_mock = Mock()
         running_context = RunningContext('video_id', 'chat_id')
         running_context.running_state = False
         running_context._tracker = tracker_mock
 
         with pytest.raises(RunningContextError):
-            running_context.store_waiting()
+            running_context._store_waiting()
 
         running_context.running_state = True
-        running_context.store_waiting()
+        running_context._store_waiting()
         running_context._tracker.store_waiting.assert_called_with('video_id', 'chat_id')
+
+pytest.main()
