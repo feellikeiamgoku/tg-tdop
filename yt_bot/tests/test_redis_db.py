@@ -177,6 +177,15 @@ class TestRunningContext:
             store_running.assert_not_called()
             store_waiting.assert_called()
 
+    def test_enter_with_rate_limiter(self, mock_redis, mock_db):
+        context = RunningContext('video_id', 'chat_id')
+        context._rate_limiter = Mock()
+        context._tracker = Mock()
+        context._rate_limiter.in_limit.return_value = False
+        with pytest.raises(LimiterError):
+            with context as c:
+                pass
+
     def test_store_running(self, mock_redis, mock_db):
         tracker_mock = Mock()
         running_context = RunningContext('video_id', 'chat_id')
