@@ -5,7 +5,8 @@ from telegram.ext import Updater, Filters, MessageHandler
 
 
 from yt_bot.db import initializer
-from yt_bot.core.handlers import ValidationHandler,pre_download_check, process_file
+from yt_bot.core.handlers import AudioHandler,ForwardHandler
+from yt_bot.core.callbacks import process_file, pre_download_check, forward
 
 
 def setup():
@@ -15,12 +16,14 @@ def setup():
     token = os.getenv("BOT_TOKEN")
     initializer.run()
 
-    updater = Updater(token=token)
+    updater = Updater(token=token, workers=8)
     dispatcher = updater.dispatcher
-    link_handler = MessageHandler(Filters.text & (~Filters.command), pre_download_check)
-    after_handler = ValidationHandler(process_file, run_async=True)
-    dispatcher.add_handler(link_handler)
-    dispatcher.add_handler(after_handler)
+    check_handler = MessageHandler(Filters.text & (~Filters.command), pre_download_check)
+    process_handler = AudioHandler(process_file, run_async=True)
+    forward_handler = ForwardHandler(forward, run_async=True)
+    dispatcher.add_handler(check_handler)
+    dispatcher.add_handler(process_handler)
+    dispatcher.add_handler(forward_handler)
     updater.start_polling()
 
 

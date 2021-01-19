@@ -3,8 +3,9 @@ from unittest.mock import patch, Mock
 
 import pytest
 
-from yt_bot.db.redis_store import RedisStore, RateLimiter, LimiterError, RATE_LIMIT, RunningTracker, RunningContext, \
-    RunningContextError
+from yt_bot.constants import RATE_LIMIT
+from yt_bot.db.redis_store import RedisStore, RateLimiter, RunningTracker, RunningContext
+from yt_bot.errors import RunningContextError, LimiterError
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -32,10 +33,10 @@ class TestRateLimiter:
 
     def test_check_rate(self, engine):
         rl = RateLimiter()
-        rl._engine = {12: 10, 111: RATE_LIMIT + 1}
+        rl._engine = {12: RATE_LIMIT - 1, 111: RATE_LIMIT + 1}
 
         rate = rl.check_rate(12)
-        assert rate == 10
+        assert rate == RATE_LIMIT - 1
 
         with pytest.raises(LimiterError):
             rl.check_rate(111)
@@ -56,6 +57,17 @@ class TestRateLimiter:
         engine_call.get.return_value = RATE_LIMIT + 1
         with pytest.raises(LimiterError):
             rl.set_rate(1)
+
+    @patch('yt_bot.db.redis_store.RateLimiter.check_rate')
+    def test_in_limit(self, check_rate, engine_call):
+        rl = RateLimiter()
+        check_rate.return_value = RATE_LIMIT - 1
+        value = rl.in_limit('chat')
+        assert value is True
+
+        check_rate.return_value = RATE_LIMIT + 1
+        value = rl.in_limit('chat')
+        assert value is False
 
 
 @patch('yt_bot.db.redis_store.redis.Redis')

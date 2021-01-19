@@ -85,12 +85,9 @@ class TestProcessedStore:
         assert value is None
 
         value = store.check('another_test')
-        assert isinstance(value[0], ForwardResult)
-        assert value[0].chat_id == 2
-        assert value[0].message_id == 8
-
-        value = store.check('test')
-        assert len(value) == 2
+        assert isinstance(value, ForwardResult)
+        assert value.chat_id == 2
+        assert value.message_id == 8
 
     def test_save(self, setup_db: ProcessedStore):
         store = setup_db

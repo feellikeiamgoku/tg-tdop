@@ -3,14 +3,7 @@ import redis
 from utils.env import get_env
 from yt_bot.constants import RATE_LIMIT
 from yt_bot.db.store import Store, ProcessedStore
-
-
-class LimiterError(Exception):
-    pass
-
-
-class RunningContextError(Exception):
-    pass
+from yt_bot.errors import RunningContextError, LimiterError
 
 
 class RedisStore(Store):
@@ -31,13 +24,13 @@ class RateLimiter(RedisStore):
         super().__init__()
         self._rate_limit = RATE_LIMIT
 
-    def check_rate(self, chat_id):
+    def check_rate(self, chat_id) -> int:
         used_calls = int(self._engine.get(chat_id) or 0)
         if used_calls > self._rate_limit:
             raise LimiterError('Get calls value more then limit value')
         return used_calls
 
-    def set_rate(self, chat_id):
+    def set_rate(self, chat_id) -> None:
         rate = self.check_rate(chat_id)
         if rate >= self._rate_limit:
             raise LimiterError('Trying to increment off limit value')
@@ -49,6 +42,10 @@ class RateLimiter(RedisStore):
     def remaining_time(self, chat_id):
         time = self._engine.ttl(chat_id) or 0
         return time
+
+    def in_limit(self, chat_id) -> bool:
+        rate = self.check_rate(chat_id)
+        return False if rate >= self._rate_limit else True
 
 
 class RunningTracker(RedisStore):
@@ -92,12 +89,15 @@ class RunningContext:
         self.running_state = None
 
     def __enter__(self):
-        self.running_state = self._tracker.is_running(self._video_id)
-        if self.running_state:
-            self._store_waiting()
+        if self._rate_limiter.in_limit(self._chat_id):
+            self.running_state = self._tracker.is_running(self._video_id)
+            if self.running_state:
+                self._store_waiting()
+            else:
+                self._store_running()
+            return self
         else:
-            self._store_running()
-        return self
+            raise LimiterError('Out of limit')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Free state of currently processing video and update rate limits"""

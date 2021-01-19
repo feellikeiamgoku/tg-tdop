@@ -1,53 +1,33 @@
 import re
-from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import NamedTuple
 
 
-class ValidationResult:
-    def __init__(self, link: str, video_id: str):
-        self.link = link
-        self.video_id = video_id
-        self.forward = None
-
-    def set_forward(self, to_forward: Iterable) -> None:
-        if isinstance(to_forward, Iterable) and to_forward:
-            self.forward = to_forward
+class VideoValidationResult(NamedTuple):
+    link: str
+    video_id: str
 
 
-class PlaylistValidationResult:
-    def __init__(self, link: str):
-        self.link = link
+class PlaylistValidationResult(NamedTuple):
+    link: str
 
 
-class BaseValidator(ABC):
-
-    def __init__(self, message: str):
-        self.message = message
-
-    @abstractmethod
-    def validate(self):
-        pass
-
-
-class VideoValidator(BaseValidator):
+def validate_video(message: str) -> VideoValidationResult:
     validation_pattern = re.compile(
         r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})'
     )
 
-    def validate(self) -> ValidationResult:
-        link = re.search(self.validation_pattern, self.message)
-        if link:
-            full_link = link.group(0)
-            video_id = link.group(1)
-            return ValidationResult(full_link, video_id)
+    link = re.search(validation_pattern, message)
+    if link:
+        full_link = link.group(0)
+        video_id = link.group(1)
+        return VideoValidationResult(full_link, video_id)
 
 
-class PlaylistValidator(BaseValidator):
+def validate_playlist(message: str) -> PlaylistValidationResult:
     validation_pattern = re.compile(
         r'(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/)(?:playlist\?list=)[^\s](.+)'
     )
 
-    def validate(self) -> PlaylistValidationResult:
-        link = re.fullmatch(self.validation_pattern, self.message)
-        if link:
-            return PlaylistValidationResult(link.string)
+    link = re.fullmatch(validation_pattern, message)
+    if link:
+        return PlaylistValidationResult(link.string)

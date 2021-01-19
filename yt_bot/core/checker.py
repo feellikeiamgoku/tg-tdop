@@ -1,42 +1,38 @@
-from yt_bot.db.redis_store import RateLimiter, RATE_LIMIT
-from yt_bot.db.store import ProcessedStore
-from yt_bot.validation.validators import VideoValidator, ValidationResult
-from yt_bot.validation.exceptions import ValidationError
+from typing import Union, NamedTuple
+
+from pytube import Playlist
+
+from yt_bot.validation.validators import validate_playlist, validate_video, VideoValidationResult, \
+    PlaylistValidationResult
 
 
-class LimitError(Exception):
-    pass
+class CheckerErrorMessage(NamedTuple):
+    msg: str
 
 
 class Checker:
+    def __init__(self, message: str):
+        self.message = message
 
-    def __init__(self, chat_id: str, message: str):
-        self._chat_id = chat_id
-        self._validator = VideoValidator(message)
-        self._db = ProcessedStore()
-        self._rate_limiter = RateLimiter()
-
-    def check(self) -> ValidationResult:
+    def check(self) -> Union[VideoValidationResult, CheckerErrorMessage]:
         """Do checks before start processing"""
-        validation_result = self._validator.validate()
-        if validation_result:
-            forwarded = self.check_forwarded(validation_result.video_id)
-            if forwarded:
-                validation_result.set_forward(forwarded)
-                return validation_result
-            elif self.in_limits():
-                return validation_result
+        validation_result = self.validate(self.message)
+
+        if isinstance(validation_result, PlaylistValidationResult):
+            playlist = Playlist(validation_result.link)
+            if len(playlist) > 0:
+                for video_url in playlist.video_urls[:25]:
+                    yield self.validate(video_url)
             else:
-                raise LimitError('Out of limits.')
+                yield CheckerErrorMessage('Empty playlist.')
         else:
-            raise ValidationError('Invalid link')
+            yield validation_result
 
-    def check_forwarded(self, video_id: str):
-        result = self._db.check(video_id)
-        return result or None
+    @staticmethod
+    def validate(message: str) -> Union[VideoValidationResult, PlaylistValidationResult, CheckerErrorMessage]:
+        validation_result = validate_video(message) or validate_playlist(message)
+        return validation_result if validation_result else CheckerErrorMessage('Invalid link!')
 
-    def in_limits(self):
-        rate = self._rate_limiter.check_rate(self._chat_id)
-        if rate >= RATE_LIMIT:
-            return False
-        return True
+    def __iter__(self):
+        return self.check()
+

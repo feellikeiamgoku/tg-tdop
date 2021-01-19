@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 from threading import Lock
-from typing import List, NamedTuple, Union
+from typing import NamedTuple, Union
 
 import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
@@ -69,15 +69,11 @@ class ProcessedStore(Store):
         self._lock = Lock()
         self._session_context = get_session(bind=self._engine)
 
-    def check(self, video_id: str) -> Union[List[ForwardResult], None]:
+    def check(self, video_id: str) -> Union[ForwardResult, None]:
         with self._session_context() as s:
             with self._lock:
-                results = s.query(ProcessedTable).filter_by(video_id=video_id).all()
-                if results:
-                    forward_results = [ForwardResult(result.chat_id, result.message_id) for result in results]
-                    return forward_results
-                else:
-                    return None
+                result = s.query(ProcessedTable).filter_by(video_id=video_id).first()
+                return ForwardResult(result.chat_id, result.message_id) if result else None
 
     def save(self, chat_id, message_id, video_id, link, part) -> None:
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)

@@ -28,7 +28,7 @@ class Downloader:
     def get_downloaded(self) -> Downloaded:
 
         downloaded = self.download()
-        if self.large_file(downloaded.file):
+        if not downloaded.exception and self.large_file(downloaded.file):
             downloaded.exception = 'File is too large, can\'t handle it for now!'
         return downloaded
 
@@ -52,8 +52,9 @@ class Downloader:
             return True
         return False
 
-    @staticmethod
-    def _prepare_error_message(message: str) -> str:
+    def _prepare_error_message(self, message: str) -> str:
+        if 'video is not available' in message or 'Video unavailable' in message:
+            return f'Video unavailable {self._link}'
         message = message.replace('ERROR:', '')
         return message.split('.')[0]
 
