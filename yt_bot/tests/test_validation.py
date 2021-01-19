@@ -1,4 +1,4 @@
-from yt_bot.validation.validators import VideoValidationResult, validate_video, validate_playlist, \
+from yt_bot.core.validators import VideoValidationResult, validate_video, validate_playlist, \
     PlaylistValidationResult
 
 

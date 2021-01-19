@@ -2,7 +2,7 @@ from typing import Union, NamedTuple
 
 from pytube import Playlist
 
-from yt_bot.validation.validators import validate_playlist, validate_video, VideoValidationResult, \
+from yt_bot.core.validators import validate_playlist, validate_video, VideoValidationResult, \
     PlaylistValidationResult
 
 
