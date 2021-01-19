@@ -4,6 +4,7 @@ from pytube import Playlist
 
 from yt_bot.core.validators import validate_playlist, validate_video, VideoValidationResult, \
     PlaylistValidationResult
+from yt_bot.core.response import response as r
 
 
 class CheckerErrorMessage(NamedTuple):
@@ -24,14 +25,14 @@ class Checker:
                 for video_url in playlist.video_urls[:25]:
                     yield self.validate(video_url)
             else:
-                yield CheckerErrorMessage('Empty playlist.')
+                yield CheckerErrorMessage(r.EMPTY_PLAYLIST)
         else:
             yield validation_result
 
     @staticmethod
     def validate(message: str) -> Union[VideoValidationResult, PlaylistValidationResult, CheckerErrorMessage]:
         validation_result = validate_video(message) or validate_playlist(message)
-        return validation_result if validation_result else CheckerErrorMessage('Invalid link!')
+        return validation_result if validation_result else CheckerErrorMessage(r.INVALID_LINK)
 
     def __iter__(self):
         return self.check()
