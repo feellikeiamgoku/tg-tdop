@@ -1,12 +1,13 @@
 import logging
 from contextlib import contextmanager
+from threading import Lock
+from typing import List, NamedTuple, Union
 
 import sqlalchemy as db
 from sqlalchemy.orm import sessionmaker
-from typing import List, NamedTuple, Union
 
-from yt_bot.db.tables import ProcessedTable
 from utils.env import get_env
+from yt_bot.db.tables import ProcessedTable
 
 
 def get_session(*args, **kwargs):
@@ -65,21 +66,24 @@ class ProcessedStore(Store):
 
     def __init__(self, con_str=None) -> None:
         super().__init__(con_str)
+        self._lock = Lock()
         self._session_context = get_session(bind=self._engine)
 
     def check(self, video_id: str) -> Union[List[ForwardResult], None]:
         with self._session_context() as s:
-            results = s.query(ProcessedTable).filter_by(video_id=video_id).all()
-            if results:
-                forward_results = [ForwardResult(result.chat_id, result.message_id) for result in results]
-                return forward_results
-            else:
-                return None
+            with self._lock:
+                results = s.query(ProcessedTable).filter_by(video_id=video_id).all()
+                if results:
+                    forward_results = [ForwardResult(result.chat_id, result.message_id) for result in results]
+                    return forward_results
+                else:
+                    return None
 
     def save(self, chat_id, message_id, video_id, link, part) -> None:
         processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
         with self._session_context() as s:
-            s.add(processed)
+            with self._lock:
+                s.add(processed)
 
 
 if __name__ == "__main__":
