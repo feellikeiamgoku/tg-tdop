@@ -57,7 +57,7 @@ def process_file(update: AudioUpdate, context) -> None:
 						tracker.update(msg.message_id, update.validation_result.link)
 
 				waiting = tracker.retrieve_waiting()
-				forward_upd = ForwardUpdate(update.chat_id, msg.message_id, waiting)
+				forward_upd = ForwardUpdate(update.chat_id, msg.message_id, *waiting)
 				context.update_queue.put(forward_upd)
 	except LimiterError:
 		bot.send_message(chat_id=update.chat_id, text='You are off limits, please, check your limits and try again.')

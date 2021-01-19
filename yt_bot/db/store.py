@@ -75,8 +75,8 @@ class ProcessedStore(Store):
                 result = s.query(ProcessedTable).filter_by(video_id=video_id).first()
                 return ForwardResult(result.chat_id, result.message_id) if result else None
 
-    def save(self, chat_id, message_id, video_id, link, part) -> None:
-        processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link, part=part)
+    def save(self, chat_id, message_id, video_id, link) -> None:
+        processed = ProcessedTable(chat_id=chat_id, message_id=message_id, video_id=video_id, link=link)
         with self._session_context() as s:
             with self._lock:
                 s.add(processed)

@@ -121,7 +121,7 @@ class RunningContext:
         return self._tracker.retrieve_waiting(self._video_id)
 
     def update(self, message_id: int, link: str):
-        self._db.save(self._chat_id, message_id, self._video_id, link, 1)
+        self._db.save(self._chat_id, message_id, self._video_id, link)
 
 
 if __name__ == '__main__':

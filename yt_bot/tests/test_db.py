@@ -72,10 +72,10 @@ class TestProcessedStore:
 
         ProcessedTable.__table__.create(bind=pr_store.engine, checkfirst=True)
         pr_store.engine.execute('''
-        insert into processed (video_id, link, chat_id, message_id, part) 
-        values('test', 'link', 1, 2, 1),
-               ('test', 'link', 1, 3, 1),
-               ('another_test', 'link', 2, 8, 1)
+        insert into processed (video_id, link, chat_id, message_id) 
+        values('test', 'link', 1, 2),
+               ('test1', 'link', 1, 3),
+               ('another_test', 'link', 2, 8)
                ''')
         return pr_store
 
@@ -91,11 +91,11 @@ class TestProcessedStore:
 
     def test_save(self, setup_db: ProcessedStore):
         store = setup_db
-        store.save(1, 2, 'from_test_save', 'link', 1)
+        store.save(1, 2, 'from_test_save', 'link')
         value = store.engine.execute('''
         select * from processed where video_id = 'from_test_save'
         ''').fetchall()
-        assert value[0][1] == 'from_test_save'
+        assert value[0][0] == 'from_test_save'
 
 
 @mock.patch('yt_bot.db.store.sessionmaker')
