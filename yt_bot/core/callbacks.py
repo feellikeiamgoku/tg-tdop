@@ -9,6 +9,7 @@ from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.redis_store import RunningContext
 from yt_bot.db.store import ProcessedStore
 from yt_bot.errors import LimiterError
+from yt_bot.core.response import response as resp
 
 
 def pre_download_check(update, context) -> None:
@@ -51,7 +52,7 @@ def process_file(update: AudioUpdate, context) -> None:
 											 downloaded.title, timeout=1000, thumb=downloaded.thumbnail)
 					except (TimedOut, NetworkError) as tg_error:
 						msg = bot.send_message(update.chat_id,
-											   text='Something bad happen while sending your audio, please try again later')
+											   text=resp.SENDING_ERROR(update.validation_result.link))
 						logging.error(tg_error)
 					else:
 						tracker.update(msg.message_id, update.validation_result.link)
@@ -60,7 +61,7 @@ def process_file(update: AudioUpdate, context) -> None:
 				forward_upd = ForwardUpdate(update.chat_id, msg.message_id, *waiting)
 				context.update_queue.put(forward_upd)
 	except LimiterError:
-		bot.send_message(chat_id=update.chat_id, text='You are off limits, please, check your limits and try again.')
+		bot.send_message(chat_id=update.chat_id, text=resp.OUT_OF_LIMIT)
 
 
 def forward(update: ForwardUpdate, context):

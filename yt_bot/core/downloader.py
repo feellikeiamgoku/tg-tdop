@@ -1,10 +1,12 @@
 import os
 import re
-from typing import NamedTuple, BinaryIO
 import urllib.request
+from typing import NamedTuple, BinaryIO
+
 from youtube_dl import YoutubeDL, DownloadError
 
 from yt_bot.constants import YDL_OPTS
+from yt_bot.core.response import response as resp
 
 
 class Downloaded(NamedTuple):
@@ -23,13 +25,13 @@ class Downloader:
     def __init__(self, link: str):
         self._link = link
         self._allowed_size = 49_000_000
-        self._ydl  = YoutubeDL(YDL_OPTS)
+        self._ydl = YoutubeDL(YDL_OPTS)
 
     def get_downloaded(self) -> Downloaded:
 
         downloaded = self.download()
         if not downloaded.exception and self.large_file(downloaded.file):
-            downloaded.exception = 'File is too large, can\'t handle it for now!'
+            downloaded.exception = resp.LARGE_FILE(self._link)
         return downloaded
 
     def download(self) -> Downloaded:
@@ -54,7 +56,7 @@ class Downloader:
 
     def _prepare_error_message(self, message: str) -> str:
         if 'video is not available' in message or 'Video unavailable' in message:
-            return f'Video unavailable {self._link}'
+            return resp.UNAVAILABLE_VIDEO(self._link)
         message = message.replace('ERROR:', '')
         return message.split('.')[0]
 
