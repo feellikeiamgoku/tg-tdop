@@ -9,7 +9,7 @@ from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.redis_store import RunningContext
 from yt_bot.db.store import ProcessedStore
 from yt_bot.errors import LimiterError
-from yt_bot.core.response import response as resp
+from yt_bot.core.response import resp
 
 
 def pre_download_check(update, context) -> None:

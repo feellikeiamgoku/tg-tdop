@@ -8,3 +8,6 @@ class LimiterError(Exception):
 
 class RunningContextError(Exception):
 	pass
+
+class UnknownType(Exception):
+	pass

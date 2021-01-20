@@ -6,7 +6,7 @@ from typing import NamedTuple, BinaryIO
 from youtube_dl import YoutubeDL, DownloadError
 
 from yt_bot.constants import YDL_OPTS
-from yt_bot.core.response import response as resp
+from yt_bot.core.response import resp
 
 
 class Downloaded(NamedTuple):

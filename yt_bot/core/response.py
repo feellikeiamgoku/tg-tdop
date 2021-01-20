@@ -11,4 +11,4 @@ class Response:
     UNHANDLED_ERROR = f'Sorry, something bad happen on my side{emoji.sad}\nAll guilty will be punished!{emoji.angry}'
 
 
-response = Response()
+resp = Response()
