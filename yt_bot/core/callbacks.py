@@ -4,7 +4,7 @@ from telegram.bot import Bot
 from telegram.error import TimedOut, NetworkError
 
 from yt_bot.core.checker import Checker, CheckerErrorMessage
-from yt_bot.core.downloader import Downloader
+from yt_bot.core.downloader import Downloader, DownloaderErrorMessage, Downloaded
 from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.redis_store import RunningContext
 from yt_bot.db.store import ProcessedStore
@@ -43,8 +43,8 @@ def process_file(update: AudioUpdate, context) -> None:
 			if not tracker.running_state:
 				downloader = Downloader(update.validation_result.link)
 				downloaded = downloader.get_downloaded()
-				if downloaded.exception:
-					msg = bot.send_message(chat_id=update.chat_id, text=downloaded.exception)
+				if isinstance(downloaded, DownloaderErrorMessage):
+					msg = bot.send_message(chat_id=update.chat_id, text=downloaded.msg)
 				else:
 					try:
 						msg = bot.send_audio(update.chat_id, downloaded.file,

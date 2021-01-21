@@ -8,6 +8,7 @@ from yt_bot.errors import UnknownType
 from yt_bot.core.response import resp as resp
 from yt_bot.constants import RATE_LIMIT
 
+
 class CheckerErrorMessage(NamedTuple):
     msg: str
 
@@ -31,7 +32,7 @@ class Checker:
                         raise UnknownType(f'Got unknown validation type "{type(validation_result)}"')
             else:
                 yield CheckerErrorMessage(resp.EMPTY_PLAYLIST)
-        elif isinstance(validation_result, VideoValidationResult):
+        elif isinstance(validation_result, VideoValidationResult) or isinstance(validation_result, CheckerErrorMessage):
             yield validation_result
         else:
             raise UnknownType(f'Got unknown validation type "{type(validation_result)}"')
