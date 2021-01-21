@@ -40,8 +40,10 @@ class RateLimiter(RedisStore):
             self._engine.set(chat_id, 1, 3600)
 
     def remaining_time(self, chat_id):
-        time = self._engine.ttl(chat_id) or 0
-        return time
+        time = self._engine.ttl(chat_id)
+        if time < 0:
+            return 60
+        return time // 60
 
     def in_limit(self, chat_id) -> bool:
         rate = self.check_rate(chat_id)
