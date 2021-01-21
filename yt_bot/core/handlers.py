@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 from telegram.ext.handler import Handler
 
@@ -20,13 +20,11 @@ class ForwardUpdate:
 
 class AudioHandler(Handler):
 
-	def check_update(self, update) -> AudioUpdate:
-		if isinstance(update, AudioUpdate):
+	def __init__(self, listen_cls, *args, **kwargs):
+		self.listen_cls = listen_cls
+		super().__init__(*args, **kwargs)
+
+	def check_update(self, update) -> Union[AudioUpdate, ForwardUpdate]:
+		if isinstance(update, self.listen_cls):
 			return update
 
-
-class ForwardHandler(Handler):
-
-	def check_update(self, update) -> ForwardUpdate:
-		if isinstance(update, ForwardUpdate):
-			return update

@@ -26,7 +26,7 @@ def pre_download_check(update, context) -> None:
 		else:
 			forwarded = store.check(validation_result.video_id)
 			if forwarded:
-				audio_update = ForwardUpdate(forwarded.chat_id, forwarded.message_id, chat_id, same_chat=False)
+				audio_update = ForwardUpdate(forwarded.chat_id, forwarded.message_id, chat_id, same_chat=True)
 			else:
 				audio_update = AudioUpdate(chat_id, validation_result)
 
@@ -68,5 +68,5 @@ def forward(update: ForwardUpdate, context):
 	bot: Bot = context.bot
 
 	for chat in update.chats:
-		if int(chat) != update.from_chat or not update.same_chat:
+		if int(chat) != update.from_chat or update.same_chat:
 			bot.forward_message(chat, update.from_chat, update.message_id)
