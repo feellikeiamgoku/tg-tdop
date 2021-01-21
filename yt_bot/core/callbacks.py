@@ -1,17 +1,19 @@
 import logging
 
-from telegram.bot import Bot
+from telegram import Bot, ChatAction
 from telegram.error import TimedOut, NetworkError
 
 from yt_bot.core.checker import Checker, CheckerErrorMessage
-from yt_bot.core.downloader import Downloader, DownloaderErrorMessage, Downloaded
+from yt_bot.core.downloader import Downloader, DownloaderErrorMessage
 from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.redis_store import RunningContext
 from yt_bot.db.store import ProcessedStore
 from yt_bot.errors import LimiterError
 from yt_bot.core.response import resp
+from yt_bot.core.decorators import catch
 
 
+@catch
 def pre_download_check(update, context) -> None:
 	message = update.message.text
 	chat_id = update.effective_chat.id
@@ -36,10 +38,12 @@ def pre_download_check(update, context) -> None:
 				deleted = True
 
 
+@catch
 def process_file(update: AudioUpdate, context) -> None:
 	bot: Bot = context.bot
 	try:
 		with RunningContext(update.validation_result.video_id, update.chat_id) as tracker:
+			bot.send_chat_action(chat_id=update.chat_id, action=ChatAction.UPLOAD_AUDIO)
 			if not tracker.running_state:
 				downloader = Downloader(update.validation_result.link)
 				downloaded = downloader.get_downloaded()
@@ -64,6 +68,7 @@ def process_file(update: AudioUpdate, context) -> None:
 		bot.send_message(chat_id=update.chat_id, text=resp.OUT_OF_LIMIT)
 
 
+@catch
 def forward(update: ForwardUpdate, context):
 	bot: Bot = context.bot
 
