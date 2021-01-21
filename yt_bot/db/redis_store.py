@@ -22,17 +22,17 @@ class RedisStore(Store):
 class RateLimiter(RedisStore):
     def __init__(self):
         super().__init__()
-        self._rate_limit = RATE_LIMIT
+        self.rate_limit = RATE_LIMIT
 
     def check_rate(self, chat_id) -> int:
         used_calls = int(self._engine.get(chat_id) or 0)
-        if used_calls > self._rate_limit:
+        if used_calls > self.rate_limit:
             raise LimiterError('Get calls value more then limit value')
         return used_calls
 
     def set_rate(self, chat_id) -> None:
         rate = self.check_rate(chat_id)
-        if rate >= self._rate_limit:
+        if rate >= self.rate_limit:
             raise LimiterError('Trying to increment off limit value')
         elif rate >= 1:
             self._engine.incr(chat_id, 1)
@@ -47,7 +47,7 @@ class RateLimiter(RedisStore):
 
     def in_limit(self, chat_id) -> bool:
         rate = self.check_rate(chat_id)
-        return False if rate >= self._rate_limit else True
+        return False if rate >= self.rate_limit else True
 
 
 class RunningTracker(RedisStore):

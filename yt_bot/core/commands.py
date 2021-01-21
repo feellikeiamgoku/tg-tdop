@@ -1,5 +1,5 @@
 from yt_bot.core.decorators import catch
-from yt_bot.db.redis_store import RateLimiter, RATE_LIMIT
+from yt_bot.db.redis_store import RateLimiter
 from utils import emoji
 
 
@@ -14,7 +14,7 @@ def start(update, context) -> None:
 @catch
 def limits(update, context) -> None:
 	rate_limiter = RateLimiter()
-	rate = RATE_LIMIT - rate_limiter.check_rate(update.effective_chat.id)
+	rate = rate_limiter.rate_limit - rate_limiter.check_rate(update.effective_chat.id)
 	remaining_time = rate_limiter.remaining_time(update.effective_chat.id)
 	context.bot.send_message(chat_id=update.effective_chat.id,
 							 text=f'You have {rate} downloads for next {remaining_time} minutes')
