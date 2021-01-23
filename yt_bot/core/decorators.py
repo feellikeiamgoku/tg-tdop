@@ -12,7 +12,6 @@ from utils.env import get_env
 
 
 def catch(func):
-	dev_chat_id = get_env('DEV_CHAT')
 
 	@wraps(func)
 	def wrap(update: Union[Update, AudioUpdate, ForwardUpdate], context):
@@ -20,6 +19,8 @@ def catch(func):
 			func(update, context)
 		except Exception as e:
 			logging.error(e)
+
+			dev_chat_id = get_env('DEV_CHAT')
 
 			if isinstance(update, (AudioUpdate, ForwardUpdate)):
 				chat_id = update.chat_id

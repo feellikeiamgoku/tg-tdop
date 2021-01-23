@@ -3,14 +3,15 @@ import logging
 from telegram import Bot, ChatAction
 from telegram.error import TimedOut, NetworkError
 
-from yt_bot.core.checker import Checker, CheckerErrorMessage
-from yt_bot.core.downloader import Downloader, DownloaderErrorMessage
+from yt_bot.core.checker import Checker, CheckerErrorMessage, VideoValidationResult
+from yt_bot.core.downloader import Downloader, DownloaderErrorMessage, Downloaded
 from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.redis_store import RunningContext
-from yt_bot.db.store import ProcessedStore
+from yt_bot.db.store import ProcessedStore, ForwardResult
 from yt_bot.errors import LimiterError
 from yt_bot.core.response import resp
 from yt_bot.core.decorators import catch
+from yt_bot.errors import UnknownType
 
 
 @catch
@@ -25,9 +26,9 @@ def pre_download_check(update, context) -> None:
 	for validation_result in checker:
 		if isinstance(validation_result, CheckerErrorMessage):
 			bot.send_message(chat_id=chat_id, text=validation_result.msg)
-		else:
+		elif isinstance(validation_result, VideoValidationResult):
 			forwarded = store.check(validation_result.video_id)
-			if forwarded:
+			if forwarded and isinstance(forwarded, ForwardResult):
 				audio_update = ForwardUpdate(forwarded.chat_id, forwarded.message_id, chat_id, same_chat=True)
 			else:
 				audio_update = AudioUpdate(chat_id, validation_result)
@@ -36,6 +37,8 @@ def pre_download_check(update, context) -> None:
 			if not deleted:
 				bot.delete_message(chat_id, message_id)
 				deleted = True
+		else:
+			raise UnknownType(f'Got unknown type {type(validation_result)}')
 
 
 @catch
@@ -49,7 +52,7 @@ def process_file(update: AudioUpdate, context) -> None:
 				downloaded = downloader.get_downloaded()
 				if isinstance(downloaded, DownloaderErrorMessage):
 					msg = bot.send_message(chat_id=update.chat_id, text=downloaded.msg)
-				else:
+				elif isinstance(downloaded, Downloaded):
 					try:
 						msg = bot.send_audio(update.chat_id, downloaded.file,
 											 downloaded.duration, downloaded.author,
@@ -60,7 +63,8 @@ def process_file(update: AudioUpdate, context) -> None:
 						logging.error(tg_error)
 					else:
 						tracker.update(msg.message_id, update.validation_result.link)
-
+				else:
+					raise UnknownType(f'Got unknown type {type(downloaded)}')
 				waiting = tracker.retrieve_waiting()
 				forward_upd = ForwardUpdate(update.chat_id, msg.message_id, *waiting)
 				context.update_queue.put(forward_upd)
@@ -73,5 +77,5 @@ def forward(update: ForwardUpdate, context):
 	bot: Bot = context.bot
 
 	for chat in update.chats:
-		if int(chat) != update.from_chat or update.same_chat:
+		if int(chat) != int(update.from_chat) or update.same_chat:
 			bot.forward_message(chat, update.from_chat, update.message_id)
