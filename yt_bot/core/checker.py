@@ -2,11 +2,14 @@ from typing import Union, NamedTuple
 
 from pytube import Playlist
 
-from yt_bot.core.validators import validate_playlist, validate_video, VideoValidationResult, \
-    PlaylistValidationResult
 from yt_bot.errors import UnknownType
 from yt_bot.core.response import resp as resp
 from yt_bot.constants import RATE_LIMIT
+from yt_bot.core.validators import (
+    validate_playlist,
+    validate_video,
+    VideoValidationResult,
+    PlaylistValidationResult)
 
 
 class CheckerErrorMessage(NamedTuple):

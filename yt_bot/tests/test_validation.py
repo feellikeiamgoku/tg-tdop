@@ -1,5 +1,8 @@
-from yt_bot.core.validators import VideoValidationResult, validate_video, validate_playlist, \
-    PlaylistValidationResult
+from yt_bot.core.validators import (
+    VideoValidationResult,
+    validate_video,
+    validate_playlist,
+    PlaylistValidationResult)
 
 
 class TestVideoValidation:

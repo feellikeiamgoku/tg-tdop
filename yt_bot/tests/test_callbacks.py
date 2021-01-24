@@ -8,7 +8,7 @@ from telegram.error import TimedOut
 
 from yt_bot.core.callbacks import process_file, pre_download_check, forward, CheckerErrorMessage, \
 	VideoValidationResult, LimiterError, resp, DownloaderErrorMessage, Downloaded, catch
-from yt_bot.core.commands import limits, RateLimiter
+from yt_bot.core.commands import limits
 from yt_bot.core.handlers import ForwardUpdate, AudioUpdate
 from yt_bot.db.store import ForwardResult
 from yt_bot.errors import UnknownType
