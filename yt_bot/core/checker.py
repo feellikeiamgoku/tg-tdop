@@ -29,13 +29,13 @@ class Checker:
                     if isinstance(playlist_item, VideoValidationResult):
                         yield playlist_item
                     else:
-                        raise UnknownType(f'Got unknown validation type "{type(validation_result)}"')
+                        raise UnknownType(validation_result)
             else:
                 yield CheckerErrorMessage(resp.EMPTY_PLAYLIST)
         elif isinstance(validation_result, VideoValidationResult) or isinstance(validation_result, CheckerErrorMessage):
             yield validation_result
         else:
-            raise UnknownType(f'Got unknown validation type "{type(validation_result)}"')
+            raise UnknownType(validation_result)
 
     @staticmethod
     def validate(message: str) -> Union[VideoValidationResult, PlaylistValidationResult, CheckerErrorMessage]:

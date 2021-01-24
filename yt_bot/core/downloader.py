@@ -48,7 +48,7 @@ class Downloader:
 		elif isinstance(video_info, DownloaderErrorMessage):
 			return video_info
 		else:
-			raise UnknownType(f'Got unknown type {type(video_info)}')
+			raise UnknownType(video_info)
 		return downloaded
 
 	def download(self) -> Union[dict, DownloaderErrorMessage]:

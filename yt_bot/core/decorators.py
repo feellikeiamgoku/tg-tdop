@@ -29,7 +29,7 @@ def catch(func):
 				chat_id = update.effective_chat.id
 				message = update.message.text
 			else:
-				raise UnknownType(f'Got unknown type: "{type(update)}"')
+				raise UnknownType(update)
 
 			context.bot.send_message(chat_id, text=resp.UNHANDLED_ERROR)
 

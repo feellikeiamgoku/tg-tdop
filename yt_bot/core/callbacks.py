@@ -38,7 +38,7 @@ def pre_download_check(update, context) -> None:
 				bot.delete_message(chat_id, message_id)
 				deleted = True
 		else:
-			raise UnknownType(f'Got unknown type {type(validation_result)}')
+			raise UnknownType(validation_result)
 
 
 @catch
@@ -64,7 +64,7 @@ def process_file(update: AudioUpdate, context) -> None:
 					else:
 						tracker.update(msg.message_id, update.validation_result.link)
 				else:
-					raise UnknownType(f'Got unknown type {type(downloaded)}')
+					raise UnknownType(downloaded)
 				waiting = tracker.retrieve_waiting()
 				forward_upd = ForwardUpdate(update.chat_id, msg.message_id, *waiting)
 				context.update_queue.put(forward_upd)
